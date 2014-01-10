@@ -31,10 +31,9 @@ class WC_Order_Item_Meta {
 	 * @param bool $flat (default: false)
 	 * @param bool $return (default: false)
 	 * @param string $hideprefix (default: _)
-	 * @return void
+	 * @return string
 	 */
 	public function display( $flat = false, $return = false, $hideprefix = '_' ) {
-		global $woocommerce;
 
 		if ( ! empty( $this->meta ) ) {
 
@@ -44,8 +43,6 @@ class WC_Order_Item_Meta {
 
 				if ( empty( $meta_values ) || ( ! empty( $hideprefix ) && substr( $meta_key, 0, 1 ) == $hideprefix ) )
 					continue;
-
-				$found_meta = true;
 
 				foreach( $meta_values as $meta_value ) {
 
@@ -63,13 +60,13 @@ class WC_Order_Item_Meta {
 					if ( $flat )
 						$meta_list[] = esc_attr( wc_attribute_label( str_replace( 'attribute_', '', $meta_key ) ) . ': ' . apply_filters( 'woocommerce_order_item_display_meta_value', $meta_value ) );
 					else
-						$meta_list[] = '<dt>' . wp_kses_post( wc_attribute_label( str_replace( 'attribute_', '', $meta_key ) ) ) . ':</dt><dd>' . wp_kses_post( apply_filters( 'woocommerce_order_item_display_meta_value', $meta_value ) ) . '</dd>';
+						$meta_list[] = '<dt>' . wp_kses_post( wc_attribute_label( str_replace( 'attribute_', '', $meta_key ) ) ) . ':</dt><dd>' . wp_kses_post( wpautop( apply_filters( 'woocommerce_order_item_display_meta_value', $meta_value ) ) ) . '</dd>';
 
 				}
 			}
 
 			if ( ! sizeof( $meta_list ) )
-				return;
+				return '';
 
 			$output = $flat ? '' : '<dl class="variation">';
 
@@ -86,5 +83,7 @@ class WC_Order_Item_Meta {
 			else
 				echo $output;
 		}
+	
+		return '';
 	}
 }

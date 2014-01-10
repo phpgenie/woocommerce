@@ -3,11 +3,11 @@
  * Plugin Name: WooCommerce
  * Plugin URI: http://www.woothemes.com/woocommerce/
  * Description: An e-commerce toolkit that helps you sell anything. Beautifully.
- * Version: 2.1-bleeding
+ * Version: 2.1-beta-3
  * Author: WooThemes
  * Author URI: http://woothemes.com
- * Requires at least: 3.5
- * Tested up to: 3.5
+ * Requires at least: 3.8
+ * Tested up to: 3.8
  *
  * Text Domain: woocommerce
  * Domain Path: /i18n/languages/
@@ -16,8 +16,9 @@
  * @category Core
  * @author WooThemes
  */
-if ( ! defined( 'ABSPATH' ) )
+if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
+}
 
 if ( ! class_exists( 'WooCommerce' ) ) :
 
@@ -32,7 +33,7 @@ final class WooCommerce {
 	/**
 	 * @var string
 	 */
-	public $version = '2.1-bleeding';
+	public $version = '2.1.0';
 
 	/**
 	 * @var WooCommerce The single instance of the class
@@ -86,8 +87,9 @@ final class WooCommerce {
 	 * @return WooCommerce - Main instance
 	 */
 	public static function instance() {
-		if ( is_null( self::$_instance ) )
+		if ( is_null( self::$_instance ) ) {
 			self::$_instance = new self();
+		}
 		return self::$_instance;
 	}
 
@@ -116,8 +118,9 @@ final class WooCommerce {
 	 */
 	public function __construct() {
 		// Auto-load classes on demand
-		if ( function_exists( "__autoload" ) )
+		if ( function_exists( "__autoload" ) ) {
 			spl_autoload_register( "__autoload" );
+		}
 
 		spl_autoload_register( array( $this, 'autoload' ) );
 
@@ -149,8 +152,9 @@ final class WooCommerce {
 	 * @return mixed
 	 */
 	public function __get( $key ) {
-		if ( method_exists( $this, $key ) )
+		if ( method_exists( $this, $key ) ) {
 			return $this->$key();
+		}
 		else switch( $key ) {
 			case 'template_url':
 				_deprecated_argument( 'Woocommerce->template_url', '2.1', 'WC_TEMPLATE_PATH constant' );
@@ -251,18 +255,22 @@ final class WooCommerce {
 		define( 'WC_VERSION', $this->version );
 		define( 'WOOCOMMERCE_VERSION', WC_VERSION ); // Backwards compat
 
-		if ( ! defined( 'WC_TEMPLATE_PATH' ) )
+		if ( ! defined( 'WC_TEMPLATE_PATH' ) ) {
 			define( 'WC_TEMPLATE_PATH', $this->template_path() );
+		}
 		
-		if ( ! defined( 'WC_ROUNDING_PRECISION' ) )
+		if ( ! defined( 'WC_ROUNDING_PRECISION' ) ) {
 			define( 'WC_ROUNDING_PRECISION', 4 );
+		}
 
 		// 1 = PHP_ROUND_HALF_UP, 2 = PHP_ROUND_HALF_DOWN
-		if ( ! defined( 'WC_TAX_ROUNDING_MODE' ) )
+		if ( ! defined( 'WC_TAX_ROUNDING_MODE' ) ) {
 			define( 'WC_TAX_ROUNDING_MODE', get_option( 'woocommerce_prices_include_tax' ) == 'yes' ? 2 : 1 ); 
+		}
 
-		if ( ! defined( 'WC_DELIMITER' ) )
+		if ( ! defined( 'WC_DELIMITER' ) ) {
 			define( 'WC_DELIMITER', '|' );
+		}
 	}
 
 	/**
@@ -273,15 +281,19 @@ final class WooCommerce {
 		include( 'includes/class-wc-install.php' );
 		include( 'includes/class-wc-download-handler.php' );
 		include( 'includes/class-wc-comments.php' );
+		include( 'includes/class-wc-post-data.php' );
 
-		if ( is_admin() )
+		if ( is_admin() ) {
 			include_once( 'includes/admin/class-wc-admin.php' );
+		}
 
-		if ( defined('DOING_AJAX') )
+		if ( defined('DOING_AJAX') ) {
 			$this->ajax_includes();
+		}
 
-		if ( ! is_admin() || defined('DOING_AJAX') )
+		if ( ! is_admin() || defined('DOING_AJAX') ) {
 			$this->frontend_includes();
+		}
 
 		// Query class
 		$this->query = include( 'includes/class-wc-query.php' );				// The main query class
@@ -306,11 +318,6 @@ final class WooCommerce {
 		include_once( 'includes/class-wc-cache-helper.php' );					// Cache Helper
 		include_once( 'includes/class-wc-https.php' );							// https Helper
 
-		// Include Core Integrations - these are included sitewide
-		include_once( 'includes/integrations/google-analytics/class-wc-google-analytics.php' );
-		include_once( 'includes/integrations/sharethis/class-wc-sharethis.php' );
-		include_once( 'includes/integrations/sharedaddy/class-wc-sharedaddy.php' );
-
 		// Include template hooks in time for themes to remove/modify them
 		include_once( 'includes/wc-template-hooks.php' );
 	}
@@ -319,7 +326,7 @@ final class WooCommerce {
 	 * Include required ajax files.
 	 */
 	public function ajax_includes() {
-		include_once( 'woocommerce-ajax.php' );	// Ajax functions for admin and the front-end
+		include_once( 'includes/class-wc-ajax.php' );					// Ajax functions for admin and the front-end
 	}
 
 	/**
@@ -459,20 +466,24 @@ final class WooCommerce {
 		// IIS
 		if ( ! isset($_SERVER['REQUEST_URI'] ) ) {
 			$_SERVER['REQUEST_URI'] = substr( $_SERVER['PHP_SELF'], 1 );
-			if ( isset( $_SERVER['QUERY_STRING'] ) )
+			if ( isset( $_SERVER['QUERY_STRING'] ) ) {
 				$_SERVER['REQUEST_URI'].='?'.$_SERVER['QUERY_STRING'];
+			}
 		}
 
 		// NGINX Proxy
-		if ( ! isset( $_SERVER['REMOTE_ADDR'] ) && isset( $_SERVER['HTTP_REMOTE_ADDR'] ) )
+		if ( ! isset( $_SERVER['REMOTE_ADDR'] ) && isset( $_SERVER['HTTP_REMOTE_ADDR'] ) ) {
 			$_SERVER['REMOTE_ADDR'] = $_SERVER['HTTP_REMOTE_ADDR'];
+		}
 
-		if ( ! isset( $_SERVER['HTTPS'] ) && ! empty( $_SERVER['HTTP_HTTPS'] ) )
+		if ( ! isset( $_SERVER['HTTPS'] ) && ! empty( $_SERVER['HTTP_HTTPS'] ) ) {
 			$_SERVER['HTTPS'] = $_SERVER['HTTP_HTTPS'];
+		}
 
 		// Support for hosts which don't use HTTPS, and use HTTP_X_FORWARDED_PROTO
-		if ( ! isset( $_SERVER['HTTPS'] ) && ! empty( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https' )
+		if ( ! isset( $_SERVER['HTTPS'] ) && ! empty( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https' ) {
 			$_SERVER['HTTPS'] = '1';
+		}
 	}
 
 	/** Helper functions ******************************************************/
@@ -684,8 +695,8 @@ final class WooCommerce {
 	 * @return bool
 	 */
 	public function verify_nonce( $action, $method = '_POST', $error_message = false ) {
-		_deprecated_function( 'Woocommerce->verify_nonce', '2.1', 'WC_Nonce_Helper->verify_nonce' );
-		return wp_verify_nonce( $$method[ '_wpnonce' ], 'woocommerce-' . $action );
+		_deprecated_function( 'Woocommerce->verify_nonce', '2.1', 'wp_verify_nonce' );
+		return wp_verify_nonce( $method[ '_wpnonce' ], 'woocommerce-' . $action );
 	}
 
 	/**
@@ -788,8 +799,8 @@ final class WooCommerce {
 	 * @param $error
 	 */
 	public function add_error( $error ) {
-		_deprecated_function( 'Woocommerce->add_error', '2.1', 'wc_add_error' );
-		wc_add_error( $error );
+		_deprecated_function( 'Woocommerce->add_error', '2.1', 'wc_add_notice' );
+		wc_add_notice( $error, 'error' );
 	}
 
 	/**
@@ -797,16 +808,16 @@ final class WooCommerce {
 	 * @param $message
 	 */
 	public function add_message( $message ) {
-		_deprecated_function( 'Woocommerce->add_message', '2.1', 'wc_add_message' );
-		wc_add_message( $message );
+		_deprecated_function( 'Woocommerce->add_message', '2.1', 'wc_add_notice' );
+		wc_add_notice( $message );
 	}
 
 	/**
 	 * @deprecated 2.1.0
 	 */
 	public function clear_messages() {
-		_deprecated_function( 'Woocommerce->clear_messages', '2.1', 'wc_clear_messages' );
-		wc_clear_messages();
+		_deprecated_function( 'Woocommerce->clear_messages', '2.1', 'wc_clear_notices' );
+		wc_clear_notices();
 	}
 
 	/**
@@ -814,8 +825,8 @@ final class WooCommerce {
 	 * @return int
 	 */
 	public function error_count() {
-		_deprecated_function( 'Woocommerce->error_count', '2.1', 'wc_error_count' );
-		return wc_error_count();
+		_deprecated_function( 'Woocommerce->error_count', '2.1', 'wc_notice_count' );
+		return wc_notice_count( 'error' );
 	}
 
 	/**
@@ -823,8 +834,8 @@ final class WooCommerce {
 	 * @return int
 	 */
 	public function message_count() {
-		_deprecated_function( 'Woocommerce->message_count', '2.1', 'wc_message_count' );
-		return wc_message_count();
+		_deprecated_function( 'Woocommerce->message_count', '2.1', 'wc_notice_count' );
+		return wc_notice_count( 'message' );
 	}
 
 	/**
@@ -832,8 +843,8 @@ final class WooCommerce {
 	 * @return mixed
 	 */
 	public function get_errors() {
-		_deprecated_function( 'Woocommerce->get_errors', '2.1', 'WC_Messages_Helper->get_errors' );
-		return $this->session->get( 'wc_errors', array() );
+		_deprecated_function( 'Woocommerce->get_errors', '2.1', 'wc_get_notices( "error" )' );
+		return wc_get_notices( 'error' );
 	}
 
 	/**
@@ -841,16 +852,16 @@ final class WooCommerce {
 	 * @return mixed
 	 */
 	public function get_messages() {
-		_deprecated_function( 'Woocommerce->get_messages', '2.1', 'WC_Messages_Helper->get_messages' );
-		return $this->session->get( 'wc_messages', array() );
+		_deprecated_function( 'Woocommerce->get_messages', '2.1', 'wc_get_notices( "success" )' );
+		return wc_get_notices( 'success' );
 	}
 
 	/**
 	 * @deprecated 2.1.0 Access via the WC_Messages_Helper helper
 	 */
 	public function show_messages() {
-		_deprecated_function( 'Woocommerce->show_messages', '2.1', 'wc_print_messages()' );
-		wc_print_messages();
+		_deprecated_function( 'Woocommerce->show_messages', '2.1', 'wc_print_notices()' );
+		wc_print_notices();
 	}
 
 	/**

@@ -20,7 +20,6 @@ class WC_Tax {
 	 * __construct function.
 	 *
 	 * @access public
-	 * @return void
 	 */
 	public function __construct() {
 		$this->precision         = WC_ROUNDING_PRECISION;
@@ -33,7 +32,7 @@ class WC_Tax {
 	 * @param  float  $price              Price to calc tax on
 	 * @param  array  $rates              Rates to apply
 	 * @param  boolean $price_includes_tax Whether the passed price has taxes included
-	 * @param  boolean $suppress_rounding  Whether to supress any rounding from taking place
+	 * @param  boolean $suppress_rounding  Whether to suppress any rounding from taking place
 	 * @return array                      Array of rates + prices after tax
 	 */
 	public function calc_tax( $price, $rates, $price_includes_tax = false, $suppress_rounding = false ) {
@@ -185,7 +184,7 @@ class WC_Tax {
 
 				$tax_amount = $the_price_inc_tax * ( $rate['rate'] / 100 );
 
-				// ADVANCED: Allow third parties to modifiy this rate
+				// ADVANCED: Allow third parties to modify this rate
 				$tax_amount = apply_filters( 'woocommerce_price_ex_tax_amount', $tax_amount, $key, $rate, $price, $the_price_inc_tax, $pre_compound_total );
 
 				// Add rate
@@ -203,36 +202,11 @@ class WC_Tax {
 	 * Searches for all matching country/state/postcode tax rates.
 	 *
 	 * @access public
-	 * @param string $args (default: '')
+	 * @param array $args
 	 * @return array
 	 */
-	public function find_rates( $args = array(), $deprecated_state = null, $deprecated_postcode = null, $deprecated_class = null ) {
+	public function find_rates( $args = array() ) {
 		global $wpdb;
-
-		// Make sure the arguments match the WC 2.0 structure
-		if ( is_string( $args ) ) {
-			_deprecated_argument( __CLASS__ . '->' . __FUNCTION__, '2.0', 'Use $args["country"] instead. Deprecated argument will be removed in WC 2.1.' );
-			$args = array(
-				'country' => $args
-			);
-		}
-
-		if ( func_num_args() > 1 ) {
-			if ( null !== $deprecated_state ) {
-				_deprecated_argument( __CLASS__ . '->' . __FUNCTION__, '2.0', 'Use $args["state"] instead. Deprecated argument will be removed in WC 2.1.' );
-				$args['state'] = $deprecated_state;
-			}
-
-			if ( null !== $deprecated_postcode ) {
-				_deprecated_argument( __CLASS__ . '->' . __FUNCTION__, '2.0', 'Use $args["postcode"] instead. Deprecated argument will be removed in WC 2.1.' );
-				$args['postcode'] = $deprecated_postcode;
-			}
-
-			if ( null !== $deprecated_class ) {
-				_deprecated_argument( __CLASS__ . '->' . __FUNCTION__, '2.0', 'Use $args["tax_class"] instead. Deprecated argument will be removed in WC 2.1.' );
-				$args['tax_class'] = $deprecated_class;
-			}
-		}
 
 		$defaults = array(
 			'country' 	=> '',
@@ -250,11 +224,11 @@ class WC_Tax {
 			return array();
 
 		// Handle postcodes
-		$valid_postcodes 	= array( '*', strtoupper( woocommerce_clean( $postcode ) ) );
+		$valid_postcodes 	= array( '*', strtoupper( wc_clean( $postcode ) ) );
 
 		// Work out possible valid wildcard postcodes
 		$postcode_length	= strlen( $postcode );
-		$wildcard_postcode	= strtoupper( woocommerce_clean( $postcode ) );
+		$wildcard_postcode	= strtoupper( wc_clean( $postcode ) );
 
 		for ( $i = 0; $i < $postcode_length; $i ++ ) {
 
@@ -340,19 +314,17 @@ class WC_Tax {
 
 	/**
 	 * Get's an array of matching rates for a tax class.
-	 *
-	 * @param   object	Tax Class
+	 * @param string $tax_class
 	 * @return  array
 	 */
 	public function get_rates( $tax_class = '' ) {
-		global $woocommerce;
 
 		$tax_class = sanitize_title( $tax_class );
 
 		/* Checkout uses customer location for the tax rates. Also, if shipping has been calculated, use the customers address. */
-		if ( ( defined('WOOCOMMERCE_CHECKOUT') && WOOCOMMERCE_CHECKOUT ) || ( ! empty( $woocommerce->customer ) && $woocommerce->customer->has_calculated_shipping() ) ) {
+		if ( ( defined('WOOCOMMERCE_CHECKOUT') && WOOCOMMERCE_CHECKOUT ) || ( ! empty( WC()->customer ) && WC()->customer->has_calculated_shipping() ) ) {
 
-			list( $country, $state, $postcode, $city ) = $woocommerce->customer->get_taxable_address();
+			list( $country, $state, $postcode, $city ) = WC()->customer->get_taxable_address();
 
 			$matched_tax_rates = $this->find_rates( array(
 				'country' 	=> $country,
@@ -399,24 +371,23 @@ class WC_Tax {
 	 * @return  mixed
 	 */
 	public function get_shipping_tax_rates( $tax_class = null ) {
-		global $woocommerce;
 
 		// See if we have an explicitly set shipping tax class
 		if ( $shipping_tax_class = get_option( 'woocommerce_shipping_tax_class' ) ) {
 			$tax_class = $shipping_tax_class == 'standard' ? '' : $shipping_tax_class;
 		}
 
-		if ( ( defined('WOOCOMMERCE_CHECKOUT') && WOOCOMMERCE_CHECKOUT ) || ( ! empty( $woocommerce->customer ) && $woocommerce->customer->has_calculated_shipping() ) ) {
+		if ( ( defined('WOOCOMMERCE_CHECKOUT') && WOOCOMMERCE_CHECKOUT ) || ( ! empty( WC()->customer ) && WC()->customer->has_calculated_shipping() ) ) {
 
-			list( $country, $state, $postcode, $city ) = $woocommerce->customer->get_taxable_address();
+			list( $country, $state, $postcode, $city ) = WC()->customer->get_taxable_address();
 
 		} else {
 
 			// Prices which include tax should always use the base rate if we don't know where the user is located
 			// Prices excluding tax however should just not add any taxes, as they will be added during checkout
 			if ( get_option( 'woocommerce_prices_include_tax' ) == 'yes' || get_option( 'woocommerce_default_customer_address' ) == 'base' ) {
-				$country 	= $woocommerce->countries->get_base_country();
-				$state 		= $woocommerce->countries->get_base_state();
+				$country 	= WC()->countries->get_base_country();
+				$state 		= WC()->countries->get_base_state();
 				$postcode   = '';
 				$city		= '';
 			} else {
@@ -469,8 +440,8 @@ class WC_Tax {
 			$rates = false;
 
 			// Loop cart and find the highest tax band
-			if ( sizeof( $woocommerce->cart->get_cart() ) > 0 )
-				foreach ( $woocommerce->cart->get_cart() as $item )
+			if ( sizeof( WC()->cart->get_cart() ) > 0 )
+				foreach ( WC()->cart->get_cart() as $item )
 					$found_tax_classes[] = $item['data']->get_tax_class();
 
 			$found_tax_classes = array_unique( $found_tax_classes );
@@ -553,12 +524,12 @@ class WC_Tax {
 	 * @return  string
 	 */
 	public function get_rate_label( $key ) {
-		global $wpdb, $woocommerce;
+		global $wpdb;
 
 		$rate_name = $wpdb->get_var( $wpdb->prepare( "SELECT tax_rate_name FROM {$wpdb->prefix}woocommerce_tax_rates WHERE tax_rate_id = %s", $key ) );
 
 		if ( ! $rate_name )
-			$rate_name = $woocommerce->countries->tax_or_vat();
+			$rate_name = WC()->countries->tax_or_vat();
 
 		return apply_filters( 'woocommerce_rate_label', $rate_name, $key, $this );
 	}
@@ -568,7 +539,7 @@ class WC_Tax {
 	 *
 	 * @access public
 	 * @param mixed $key
-	 * @return void
+	 * @return string
 	 */
 	public function get_rate_code( $key ) {
 		global $wpdb;

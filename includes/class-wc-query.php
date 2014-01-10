@@ -46,7 +46,6 @@ class WC_Query {
 	 * Constructor for the query class. Hooks in methods.
 	 *
 	 * @access public
-	 * @return void
 	 */
 	public function __construct() {
 		add_action( 'init', array( $this, 'add_endpoints' ) );
@@ -73,15 +72,16 @@ class WC_Query {
 		// Query vars to add to WP
 		$this->query_vars = array(
 			// Checkout actions
-			'order-pay'       => get_option( 'woocommerce_checkout_pay_endpoint', 'order-pay' ),
-			'order-received'  => get_option( 'woocommerce_checkout_order_received_endpoint', 'order-received' ),
+			'order-pay'          => get_option( 'woocommerce_checkout_pay_endpoint', 'order-pay' ),
+			'order-received'     => get_option( 'woocommerce_checkout_order_received_endpoint', 'order-received' ),
 
 			// My account actions
-			'view-order'      => get_option( 'woocommerce_myaccount_view_order_endpoint', 'view-order' ),
-			'edit-account'    => get_option( 'woocommerce_myaccount_edit_account_endpoint', 'edit-account' ),
-			'edit-address'    => get_option( 'woocommerce_myaccount_edit_address_endpoint', 'edit-address' ),
-			'lost-password'   => get_option( 'woocommerce_myaccount_lost_password_endpoint', 'lost-password' ),
-			'customer-logout' => get_option( 'woocommerce_logout_endpoint', 'customer-logout' )
+			'view-order'         => get_option( 'woocommerce_myaccount_view_order_endpoint', 'view-order' ),
+			'edit-account'       => get_option( 'woocommerce_myaccount_edit_account_endpoint', 'edit-account' ),
+			'edit-address'       => get_option( 'woocommerce_myaccount_edit_address_endpoint', 'edit-address' ),
+			'lost-password'      => get_option( 'woocommerce_myaccount_lost_password_endpoint', 'lost-password' ),
+			'customer-logout'    => get_option( 'woocommerce_logout_endpoint', 'customer-logout' ),
+			'add-payment-method' => get_option( 'woocommerce_myaccount_add_payment_method_endpoint', 'add-payment-method' ),
 		);
 	}
 
@@ -89,8 +89,8 @@ class WC_Query {
 	 * Get any errors from querystring
 	 */
 	public function get_errors() {
-		if ( isset( $_GET['wc_error'] ) )
-			wc_add_error( esc_attr( $_GET['wc_error'] ) );
+		if ( ! empty( $_GET['wc_error'] ) && ( $error = sanitize_text_field( urldecode( $_GET['wc_error'] ) ) ) && ! wc_has_notice( $error, 'error' ) )
+			wc_add_notice( $error, 'error' );
 	}
 
 	/**
@@ -105,7 +105,8 @@ class WC_Query {
 	 * add_query_vars function.
 	 *
 	 * @access public
-	 * @return void
+	 * @param array $vars
+	 * @return array
 	 */
 	public function add_query_vars( $vars ) {
 		foreach ( $this->query_vars as $key => $var )
@@ -145,7 +146,7 @@ class WC_Query {
 			return;
 
 		// When orderby is set, WordPress shows posts. Get around that here.
-		if ( $q->is_home() && 'page' == get_option('show_on_front') && get_option('page_on_front') == woocommerce_get_page_id('shop') ) {
+		if ( $q->is_home() && 'page' == get_option('show_on_front') && get_option('page_on_front') == wc_get_page_id('shop') ) {
 			$_query = wp_parse_args( $q->query );
 			if ( empty( $_query ) || ! array_diff( array_keys( $_query ), array( 'preview', 'page', 'paged', 'cpage', 'orderby' ) ) ) {
 				$q->is_page = true;
@@ -156,7 +157,7 @@ class WC_Query {
 		}
 
 		// Special check for shops with the product archive on front
-		if ( $q->is_page() && 'page' == get_option( 'show_on_front' ) && $q->get('page_id') == woocommerce_get_page_id('shop') ) {
+		if ( $q->is_page() && 'page' == get_option( 'show_on_front' ) && $q->get('page_id') == wc_get_page_id('shop') ) {
 
 			// This is a front-page shop
 			$q->set( 'post_type', 'product' );
@@ -171,7 +172,7 @@ class WC_Query {
 			// This is hacky but works. Awaiting http://core.trac.wordpress.org/ticket/21096
 			global $wp_post_types;
 
-			$shop_page 	= get_post( woocommerce_get_page_id('shop') );
+			$shop_page 	= get_post( wc_get_page_id('shop') );
 			$q->is_page = true;
 
 			$wp_post_types['product']->ID 			= $shop_page->ID;
@@ -247,24 +248,25 @@ class WC_Query {
 
 	/**
 	 * wpseo_metadesc function.
+	 * Hooked into wpseo_ hook already, so no need for function_exist
 	 *
 	 * @access public
-	 * @param mixed $meta
-	 * @return void
+	 * @return string
 	 */
 	public function wpseo_metadesc() {
-		return wpseo_get_value( 'metadesc', woocommerce_get_page_id('shop') );
+		return wpseo_get_value( 'metadesc', wc_get_page_id('shop') );
 	}
 
 
 	/**
 	 * wpseo_metakey function.
+	 * Hooked into wpseo_ hook already, so no need for function_exist
 	 *
 	 * @access public
-	 * @return void
+	 * @return string
 	 */
 	public function wpseo_metakey() {
-		return wpseo_get_value( 'metakey', woocommerce_get_page_id('shop') );
+		return wpseo_get_value( 'metakey', wc_get_page_id('shop') );
 	}
 
 
@@ -272,9 +274,9 @@ class WC_Query {
 	 * Hook into the_posts to do the main product query if needed - relevanssi compatibility
 	 *
 	 * @access public
-	 * @param mixed $posts
-	 * @param bool $query (default: false)
-	 * @return void
+	 * @param array $posts
+	 * @param WP_Query|bool $query (default: false)
+	 * @return array
 	 */
 	public function the_posts( $posts, $query = false ) {
 		// Abort if there's no query
@@ -374,8 +376,6 @@ class WC_Query {
 	 */
 	public function remove_product_query() {
 		remove_filter( 'pre_get_posts', array( $this, 'pre_get_posts' ) );
-		remove_filter( 'posts_clauses', array( $this, 'order_by_popularity_post_clauses' ) );
-		remove_filter( 'posts_clauses', array( $this, 'order_by_rating_post_clauses' ) );
 	}
 
 	/**
@@ -466,7 +466,7 @@ class WC_Query {
 	public function get_catalog_ordering_args( $orderby = '', $order = '' ) {
 		// Get ordering from query string unless defined
 		if ( ! $orderby ) {
-			$orderby_value = isset( $_GET['orderby'] ) ? woocommerce_clean( $_GET['orderby'] ) : apply_filters( 'woocommerce_default_catalog_orderby', get_option( 'woocommerce_default_catalog_orderby' ) );
+			$orderby_value = isset( $_GET['orderby'] ) ? wc_clean( $_GET['orderby'] ) : apply_filters( 'woocommerce_default_catalog_orderby', get_option( 'woocommerce_default_catalog_orderby' ) );
 
 			// Get order + orderby args from string
 			$orderby_value = explode( '-', $orderby_value );
@@ -485,6 +485,9 @@ class WC_Query {
 		$args['meta_key'] = '';
 
 		switch ( $orderby ) {
+			case 'rand' :
+				$args['orderby']  = 'rand';
+			break;
 			case 'date' :
 				$args['orderby']  = 'date';
 				$args['order']    = $order == 'ASC' ? 'ASC' : 'DESC';
@@ -628,10 +631,10 @@ class WC_Query {
 			if ( $attribute_taxonomies ) {
 				foreach ( $attribute_taxonomies as $tax ) {
 
-			    	$attribute = sanitize_title( $tax->attribute_name );
-			    	$taxonomy = wc_attribute_taxonomy_name( $attribute );
-			    	$name = 'filter_' . $attribute;
-			    	$query_type_name = 'query_type_' . $attribute;
+					$attribute       = wc_sanitize_taxonomy_name( $tax->attribute_name );
+					$taxonomy        = wc_attribute_taxonomy_name( $attribute );
+					$name            = 'filter_' . $attribute;
+					$query_type_name = 'query_type_' . $attribute;
 
 			    	if ( ! empty( $_GET[ $name ] ) && taxonomy_exists( $taxonomy ) ) {
 

@@ -294,7 +294,6 @@ class WC_Countries {
 			'FR' => array(),
 			'IS' => array(),
 			'IL' => array(),
-			'JP' => array(),
 			'KR' => array(),
 			'NL' => array(),
 			'NO' => array(),
@@ -313,8 +312,8 @@ class WC_Countries {
 
 		if ( $allowed )
 			foreach ( $allowed as $CC => $country )
-				if ( ! isset( $states[ $CC ] ) && file_exists( $woocommerce->plugin_path() . '/i18n/states/' . $CC . '.php' ) )
-					include( $woocommerce->plugin_path() . '/i18n/states/' . $CC . '.php' );
+				if ( ! isset( $states[ $CC ] ) && file_exists( WC()->plugin_path() . '/i18n/states/' . $CC . '.php' ) )
+					include( WC()->plugin_path() . '/i18n/states/' . $CC . '.php' );
 
 		$this->states = apply_filters( 'woocommerce_states', $states );
 	}
@@ -339,7 +338,7 @@ class WC_Countries {
 	 * @return string
 	 */
 	public function get_base_state() {
-		$default = woocommerce_clean( get_option( 'woocommerce_default_country' ) );
+		$default = wc_clean( get_option( 'woocommerce_default_country' ) );
 		$state   = ( ( $pos = strrpos( $default, ':' ) ) === false ) ? '' : substr( $default, $pos + 1 );
 
 		return apply_filters( 'woocommerce_countries_base_state', $state );
@@ -432,7 +431,7 @@ class WC_Countries {
 		$raw_countries = get_option( 'woocommerce_specific_allowed_countries' );
 
 		foreach ( $raw_countries as $country )
-			if ( ! empty( $this->states[ $country ] ) )
+			if ( isset( $this->states[ $country ] ) )
 				$states[ $country ] = $this->states[ $country ];
 
 		return apply_filters( 'woocommerce_countries_allowed_country_states', $states );
@@ -481,11 +480,10 @@ class WC_Countries {
 	 * @return string
 	 */
 	public function shipping_to_prefix() {
-		global $woocommerce;
 		$return = '';
-		if (in_array($woocommerce->customer->get_shipping_country(), array( 'GB', 'US', 'AE', 'CZ', 'DO', 'NL', 'PH', 'USAF' ))) $return = __( 'to the', 'woocommerce' );
+		if (in_array(WC()->customer->get_shipping_country(), array( 'GB', 'US', 'AE', 'CZ', 'DO', 'NL', 'PH', 'USAF' ))) $return = __( 'to the', 'woocommerce' );
 		else $return = __( 'to', 'woocommerce' );
-		return apply_filters('woocommerce_countries_shipping_to_prefix', $return, $woocommerce->customer->get_shipping_country());
+		return apply_filters('woocommerce_countries_shipping_to_prefix', $return, WC()->customer->get_shipping_country());
 	}
 
 
@@ -545,11 +543,11 @@ class WC_Countries {
 	 * Get the states for a country.
 	 *
 	 * @access public
-	 * @param mixed $cc country code
+	 * @param string $cc country code
 	 * @return array of states
 	 */
 	public function get_states( $cc ) {
-		if (isset( $this->states[$cc] )) return $this->states[$cc];
+		return ( isset( $this->states[ $cc ] ) ) ? $this->states[ $cc ] : array();
 	}
 
 
@@ -569,9 +567,9 @@ class WC_Countries {
 
 		if ( $this->countries ) foreach ( $this->countries as $key=>$value) :
 			if ( $states =  $this->get_states($key) ) :
-				echo '<optgroup label="'.$value.'">';
+				echo '<optgroup label="' . esc_attr( $value ) . '">';
     				foreach ($states as $state_key=>$state_value) :
-    					echo '<option value="'.$key.':'.$state_key.'"';
+    					echo '<option value="' . esc_attr( $key ) . ':'.$state_key.'"';
 
     					if ($selected_country==$key && $selected_state==$state_key) echo ' selected="selected"';
 
@@ -581,7 +579,7 @@ class WC_Countries {
 			else :
     			echo '<option';
     			if ($selected_country==$key && $selected_state=='*') echo ' selected="selected"';
-    			echo ' value="'.$key.'">'. ($escape ? esc_js( $value ) : $value) .'</option>';
+    			echo ' value="' . esc_attr( $key ) . '">'. ($escape ? esc_js( $value ) : $value) .'</option>';
 			endif;
 		endforeach;
 	}
@@ -618,7 +616,7 @@ class WC_Countries {
 				'HU' => "{name}\n{company}\n{city}\n{address_1}\n{address_2}\n{postcode}\n{country}",
 				'IS' => $postcode_before_city,
 				'IT' => "{company}\n{name}\n{address_1}\n{address_2}\n{postcode} {city} {state_upper}\n{country}",
-				'JP' => "{postcode}\n{state}{city}{address_2}\n{address_1}\n{company}\n{name}\n {country}",
+				'JP' => "{postcode}\n{state}{city}{address_2}\n{address_1}\n{company}\n{last_name} {first_name}\n {country}",
 				'LI' => $postcode_before_city,
 				'NL' => $postcode_before_city,
 				'NZ' => "{name}\n{company}\n{address_1}\n{address_2}\n{city} {postcode}\n{country}",
@@ -711,7 +709,7 @@ class WC_Countries {
 	 * Returns the fields we show by default. This can be filtered later on.
 	 *
 	 * @access public
-	 * @return void
+	 * @return array
 	 */
 	public function get_default_address_fields() {
 		$fields = array(
@@ -775,6 +773,24 @@ class WC_Countries {
 	}
 
 	/**
+	 * Get JS selectors for fields which are shown/hidden depending on the locale.
+	 *
+	 * @access public
+	 * @return array
+	 */
+	public function get_country_locale_field_selectors() {
+		$locale_fields = array (
+			'address_1'	=> '#billing_address_1_field, #shipping_address_1_field',
+			'address_2'	=> '#billing_address_2_field, #shipping_address_2_field',
+			'state'		=> '#billing_state_field, #shipping_state_field',
+			'postcode'	=> '#billing_postcode_field, #shipping_postcode_field',
+			'city'		=> '#billing_city_field, #shipping_city_field'
+		);
+		
+		return apply_filters( 'woocommerce_country_locale_field_selectors', $locale_fields );
+	}
+
+	/**
 	 * Get country locale settings
 	 *
 	 * @access public
@@ -812,6 +828,12 @@ class WC_Countries {
 				'BI' => array(
 					'state' => array(
 						'required' => false,
+					),
+				),
+				'BO' => array(
+					'postcode' => array(
+						'required' 	=> false,
+						'hidden'	=> true
 					),
 				),
 				'CA' => array(
@@ -920,19 +942,8 @@ class WC_Countries {
 					)
 				),
 				'JP' => array(
-					'last_name'          => array(
-						'class'             => array( 'form-row-first' ),
-					),
-					'first_name'         => array(
-						'class'             => array( 'form-row-last' ),
-						'clear'             => true
-					),
-					'postcode'          => array(
-						'class'             => array( 'form-row-first' ),
-					),
-					'state'         => array(
-						'class'             => array( 'form-row-last' ),
-						'clear'             => true
+					'state'		=> array(
+						'label'    => __( 'Province', 'woocommerce' )
 					)
 				),
 				'KR' => array(
@@ -1093,7 +1104,7 @@ class WC_Countries {
 	 * @access public
 	 * @param mixed $country
 	 * @param string $type (default: 'billing_')
-	 * @return void
+	 * @return array
 	 */
 	public function get_address_fields( $country, $type = 'billing_' ) {
 
@@ -1105,7 +1116,7 @@ class WC_Countries {
 
 		if ( isset( $locale[ $country ] ) ) {
 
-			$fields = woocommerce_array_overlay( $fields, $locale[ $country ] );
+			$fields = wc_array_overlay( $fields, $locale[ $country ] );
 
 			// If default country has postcode_before_city switch the fields round.
 			// This is only done at this point, not if country changes on checkout.

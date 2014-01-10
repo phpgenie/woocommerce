@@ -229,6 +229,7 @@ class WC_Admin_Report {
 			$query['limit'] = "LIMIT {$limit}";
 		}
 
+		$query      = apply_filters( 'woocommerce_reports_get_order_report_query', $query );
 		$query      = implode( ' ', $query );
 		$query_hash = md5( $query_type . $query );
 
@@ -386,14 +387,14 @@ class WC_Admin_Report {
 			$total += $d->sparkline_value;
 
 		if ( $type == 'sales' ) {
-			$tooltip = sprintf( __( 'Sold %s worth in the last %d days', 'woocommerce' ), strip_tags( woocommerce_price( $total ) ), $days );
+			$tooltip = sprintf( __( 'Sold %s worth in the last %d days', 'woocommerce' ), strip_tags( wc_price( $total ) ), $days );
 		} else {
 			$tooltip = sprintf( _n( 'Sold 1 item in the last %d days', 'Sold %d items in the last %d days', $total, 'woocommerce' ), $total, $days );
 		}
 
 		$sparkline_data = array_values( $this->prepare_chart_data( $data, 'post_date', 'sparkline_value', $days - 1, strtotime( 'midnight -' . ( $days - 1 ) . ' days', current_time( 'timestamp' ) ), 'day' ) );
 
-		return '<span class="wc_sparkline ' . ( $type == 'sales' ? 'lines' : 'bars' ) . ' tips" data-color="#777" data-tip="' . $tooltip . '" data-barwidth="' . 60*60*16*1000 . '" data-sparkline="' . esc_attr( json_encode( $sparkline_data ) ) . '"></span>';
+		return '<span class="wc_sparkline ' . ( $type == 'sales' ? 'lines' : 'bars' ) . ' tips" data-color="#777" data-tip="' . esc_attr( $tooltip ) . '" data-barwidth="' . 60*60*16*1000 . '" data-sparkline="' . esc_attr( json_encode( $sparkline_data ) ) . '"></span>';
 	}
 
 	/**

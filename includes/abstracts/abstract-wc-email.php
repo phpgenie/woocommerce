@@ -22,7 +22,7 @@ abstract class WC_Email extends WC_Settings_API {
 	/** @var string Payment method title. */
 	var $title;
 
-	/** @var bool True if the method is enabled. */
+	/** @var string 'yes' if the method is enabled. */
 	var $enabled;
 
 	/** @var string Description for the gateway. */
@@ -90,6 +90,7 @@ abstract class WC_Email extends WC_Settings_API {
         '/&(bull|#149|#8226);/i',                // Bullet
         '/&(pound|#163);/i',                     // Pound sign
         '/&(euro|#8364);/i',                     // Euro sign
+        '/&#36;/',                               // Dollar sign
         '/&[^&;]+;/i',                           // Unknown/unhandled entities
         '/[ ]{2,}/'                              // Runs of spaces, post-handling
     );
@@ -117,6 +118,7 @@ abstract class WC_Email extends WC_Settings_API {
         '*',
         '£',
         'EUR',                                  // Euro sign. € ?
+        '$',                                    // Dollar sign
         '',                                     // Unknown/unhandled entities
         ' '                                     // Runs of spaces, post-handling
     );
@@ -125,10 +127,8 @@ abstract class WC_Email extends WC_Settings_API {
 	 * Constructor
 	 *
 	 * @access public
-	 * @return void
 	 */
 	function __construct() {
-		global $woocommerce;
 
 		// Init settings
 		$this->init_form_fields();
@@ -138,8 +138,9 @@ abstract class WC_Email extends WC_Settings_API {
 		add_action( 'woocommerce_update_options_email_' . $this->id, array( $this, 'process_admin_options' ) );
 
 		// Default template base if not declared in child constructor
-		if ( is_null( $this->template_base ) )
-			$this->template_base = $woocommerce->plugin_path() . '/templates/';
+		if ( is_null( $this->template_base ) ) {
+			$this->template_base = WC()->plugin_path() . '/templates/';
+		}
 
 		// Settings
 		$this->heading 			= $this->get_option( 'heading', $this->heading );
@@ -167,8 +168,8 @@ abstract class WC_Email extends WC_Settings_API {
 	 * handle_multipart function.
 	 *
 	 * @access public
-	 * @param mixed $mailer
-	 * @return void
+	 * @param PHPMailer $mailer
+	 * @return PHPMailer
 	 */
 	function handle_multipart( $mailer )  {
 
@@ -256,7 +257,7 @@ abstract class WC_Email extends WC_Settings_API {
 	 * get_content_type function.
 	 *
 	 * @access public
-	 * @return void
+	 * @return string
 	 */
 	function get_content_type() {
 		switch ( $this->get_email_type() ) {
@@ -270,11 +271,12 @@ abstract class WC_Email extends WC_Settings_API {
 	}
 
 	/**
-	* Proxy to parent's get_option and attempt to localize the result using gettext.
-	*
-	* @access public
-	* @return string
-	*/
+	 * Proxy to parent's get_option and attempt to localize the result using gettext.
+	 * @access public
+	 * @param string $key
+	 * @param mixed  $empty_value
+	 * @return string
+	 */
 	function get_option( $key, $empty_value = null ) {
 		return __( parent::get_option( $key, $empty_value ) );
 	}
@@ -295,7 +297,7 @@ abstract class WC_Email extends WC_Settings_API {
 	 * get_blogname function.
 	 *
 	 * @access public
-	 * @return void
+	 * @return string
 	 */
 	function get_blogname() {
 		return wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
@@ -317,13 +319,14 @@ abstract class WC_Email extends WC_Settings_API {
 			$email_content = $this->style_inline( $this->get_content_html() );
 		}
 
-		return $email_content;
+		return wordwrap( $email_content, 70 );
 	}
 
 	/**
 	 * style_inline_tags function.
 	 *
 	 * @access public
+	 * @param array $tags
 	 * @return array
 	 */
 	function style_inline_tags($tags) {
@@ -332,8 +335,8 @@ abstract class WC_Email extends WC_Settings_API {
 
 	/**
 	 * style_inline_h1_tag function.
-	 *
 	 * @access public
+	 * @param array $styles
 	 * @return array
 	 */
 	function style_inline_h1_tag($styles) {
@@ -354,8 +357,8 @@ abstract class WC_Email extends WC_Settings_API {
 
 	/**
 	 * style_inline_h2_tag function.
-	 *
 	 * @access public
+	 * @param array $styles
 	 * @return array
 	 */
 	function style_inline_h2_tag($styles) {
@@ -378,6 +381,7 @@ abstract class WC_Email extends WC_Settings_API {
 	 * style_inline_h3_tag function.
 	 *
 	 * @access public
+	 * @param array $styles
 	 * @return array
 	 */
 	function style_inline_h3_tag($styles) {
@@ -396,6 +400,10 @@ abstract class WC_Email extends WC_Settings_API {
 		return $styles;
 	}
 
+	/**
+	 * @param array $styles
+	 * @return array
+	 */
 	function style_inline_a_tag($styles) {
 		$styles['color'] = get_option( 'woocommerce_email_text_color' );
 		$styles['font-weight'] = 'normal';
@@ -408,6 +416,7 @@ abstract class WC_Email extends WC_Settings_API {
 	 * style_inline_img_tag function.
 	 *
 	 * @access public
+	 * @param array $styles
 	 * @return array
 	 */
 	function style_inline_img_tag($styles) {
@@ -438,6 +447,7 @@ abstract class WC_Email extends WC_Settings_API {
 	 * get_style_inline_for_tag function.
 	 *
 	 * @access public
+	 * @param string $tag
 	 * @return string
 	 */
 	function get_style_inline_for_tag($tag) {
@@ -456,11 +466,12 @@ abstract class WC_Email extends WC_Settings_API {
 	 *
 	 * @access public
 	 * @param mixed $content
-	 * @return void
+	 * @return string
 	 */
 	function style_inline( $content ) {
-		if ( ! class_exists( 'DOMDocument' ) )
+		if ( ! class_exists( 'DOMDocument' ) ) {
 			return $content;
+		}
 
 		$dom = new DOMDocument();
 		libxml_use_internal_errors( true );
@@ -471,8 +482,9 @@ abstract class WC_Email extends WC_Settings_API {
 			$nodes = $dom->getElementsByTagName($tag);
 
 			foreach( $nodes as $node ) {
-				if ( ! $node->hasAttribute( 'style' ) )
+				if ( ! $node->hasAttribute( 'style' ) ) {
 					$node->setAttribute( 'style', $this->get_style_inline_for_tag($tag) );
+				}
 			}
 		}
 
@@ -485,7 +497,7 @@ abstract class WC_Email extends WC_Settings_API {
 	 * get_content_plain function.
 	 *
 	 * @access public
-	 * @return void
+	 * @return string
 	 */
 	function get_content_plain() {}
 
@@ -493,7 +505,7 @@ abstract class WC_Email extends WC_Settings_API {
 	 * get_content_html function.
 	 *
 	 * @access public
-	 * @return void
+	 * @return string
 	 */
 	function get_content_html() {}
 
@@ -652,7 +664,6 @@ abstract class WC_Email extends WC_Settings_API {
 	 * @return void
 	 */
 	function admin_options() {
-		global $woocommerce;
 
 		// Handle any actions
 		if ( ! empty( $this->template_html ) || ! empty( $this->template_plain ) ) {
@@ -699,8 +710,9 @@ abstract class WC_Email extends WC_Settings_API {
 					'template_plain' 	=> __( 'Plain text template', 'woocommerce' )
 				);
 				foreach ( $templates as $template => $title ) :
-					if ( empty( $this->$template ) )
+					if ( empty( $this->$template ) ) {
 						continue;
+					}
 
 					$local_file		= get_stylesheet_directory() . '/woocommerce/' . $this->$template;
 					$core_file		= $this->template_base . $this->$template;
@@ -710,7 +722,7 @@ abstract class WC_Email extends WC_Settings_API {
 
 						<h4><?php echo wp_kses_post( $title ); ?></h4>
 
-						<?php if ( file_exists( $local_file ) ) : ?>
+						<?php if ( file_exists( $local_file ) ) { ?>
 
 							<p>
 								<a href="#" class="button toggle_editor"></a>
@@ -728,14 +740,14 @@ abstract class WC_Email extends WC_Settings_API {
 
 							</div>
 
-						<?php elseif ( file_exists( $template_file ) ) : ?>
+						<?php } elseif ( file_exists( $template_file ) ) { ?>
 
 							<p>
 								<a href="#" class="button toggle_editor"></a>
 
-								<?php if ( ( is_dir( get_stylesheet_directory() . '/woocommerce/emails/' ) && is_writable( get_stylesheet_directory() . '/woocommerce/emails/' ) ) || is_writable( get_stylesheet_directory() ) ) : ?>
+								<?php if ( ( is_dir( get_stylesheet_directory() . '/woocommerce/emails/' ) && is_writable( get_stylesheet_directory() . '/woocommerce/emails/' ) ) || is_writable( get_stylesheet_directory() ) ) { ?>
 									<a href="<?php echo remove_query_arg( array( 'delete_template', 'saved' ), add_query_arg( 'move_template', $template ) ); ?>" class="button"><?php _e( 'Copy file to theme', 'woocommerce' ); ?></a>
-								<?php endif; ?>
+								<?php } ?>
 
 								<?php printf( __( 'To override and edit this email template copy <code>%s</code> to your theme folder: <code>%s</code>.', 'woocommerce' ), plugin_basename( $template_file ) , 'yourtheme/woocommerce/' . $this->$template ); ?>
 							</p>
@@ -746,11 +758,11 @@ abstract class WC_Email extends WC_Settings_API {
 
 							</div>
 
-						<?php else : ?>
+						<?php } else { ?>
 
 							<p><?php _e( 'File was not found.', 'woocommerce' ); ?></p>
 
-						<?php endif; ?>
+						<?php } ?>
 
 					</div>
 					<?php

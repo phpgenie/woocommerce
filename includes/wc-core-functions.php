@@ -19,7 +19,7 @@ include( 'wc-coupon-functions.php' );
 include( 'wc-customer-functions.php' );
 include( 'wc-deprecated-functions.php' );
 include( 'wc-formatting-functions.php' );
-include( 'wc-message-functions.php' );
+include( 'wc-notice-functions.php' );
 include( 'wc-order-functions.php' );
 include( 'wc-page-functions.php' );
 include( 'wc-product-functions.php' );
@@ -52,7 +52,7 @@ add_filter( 'woocommerce_short_description', 'do_shortcode', 11 ); // AFTER wpau
  * @param string $name (default: '')
  * @return void
  */
-function woocommerce_get_template_part( $slug, $name = '' ) {
+function wc_get_template_part( $slug, $name = '' ) {
 	$template = '';
 
 	// Look in yourtheme/slug-name.php and yourtheme/woocommerce/slug-name.php
@@ -81,11 +81,11 @@ function woocommerce_get_template_part( $slug, $name = '' ) {
  * @param string $default_path (default: '')
  * @return void
  */
-function woocommerce_get_template( $template_name, $args = array(), $template_path = '', $default_path = '' ) {
+function wc_get_template( $template_name, $args = array(), $template_path = '', $default_path = '' ) {
 	if ( $args && is_array($args) )
 		extract( $args );
 
-	$located = woocommerce_locate_template( $template_name, $template_path, $default_path );
+	$located = wc_locate_template( $template_name, $template_path, $default_path );
 
 	do_action( 'woocommerce_before_template_part', $template_name, $template_path, $located, $args );
 
@@ -109,7 +109,7 @@ function woocommerce_get_template( $template_name, $args = array(), $template_pa
  * @param string $default_path (default: '')
  * @return string
  */
-function woocommerce_locate_template( $template_name, $template_path = '', $default_path = '' ) {
+function wc_locate_template( $template_name, $template_path = '', $default_path = '' ) {
 	if ( ! $template_path ) $template_path = WC()->template_path();
 	if ( ! $default_path ) $default_path = WC()->plugin_path() . '/templates/';
 
@@ -155,6 +155,7 @@ function get_woocommerce_currencies() {
 				'EUR' => __( 'Euros', 'woocommerce' ),
 				'HKD' => __( 'Hong Kong Dollar', 'woocommerce' ),
 				'HUF' => __( 'Hungarian Forint', 'woocommerce' ),
+				'ISK' => __( 'Icelandic krona', 'woocommerce' ),
 				'IDR' => __( 'Indonesia Rupiah', 'woocommerce' ),
 				'INR' => __( 'Indian Rupee', 'woocommerce' ),
 				'ILS' => __( 'Israeli Shekel', 'woocommerce' ),
@@ -229,6 +230,7 @@ function get_woocommerce_currency_symbol( $currency = '' ) {
 		case 'HUF' : $currency_symbol = '&#70;&#116;'; break;
 		case 'IDR' : $currency_symbol = 'Rp'; break;
 		case 'INR' : $currency_symbol = 'Rs.'; break;
+		case 'ISK' : $currency_symbol = 'Kr.'; break;
 		case 'ILS' : $currency_symbol = '&#8362;'; break;
 		case 'PHP' : $currency_symbol = '&#8369;'; break;
 		case 'PLN' : $currency_symbol = '&#122;&#322;'; break;
@@ -254,10 +256,10 @@ function get_woocommerce_currency_symbol( $currency = '' ) {
  * @param string $headers (default: "Content-Type: text/html\r\n")
  * @param string $attachments (default: "")
  */
-function woocommerce_mail( $to, $subject, $message, $headers = "Content-Type: text/html\r\n", $attachments = "" ) {
+function wc_mail( $to, $subject, $message, $headers = "Content-Type: text/html\r\n", $attachments = "" ) {
 	global $woocommerce;
 
-	$mailer = $woocommerce->mailer();
+	$mailer = WC()->mailer();
 
 	$mailer->send( $to, $subject, $message, $headers, $attachments );
 }
@@ -323,7 +325,7 @@ function wc_print_js() {
 
 /**
  * Set a cookie - wrapper for setcookie using WP constants
- * 
+ *
  * @param  string  $name   Name of the cookie being set
  * @param  string  $value  Value of the cookie
  * @param  integer $expire Expiry of the cookie
@@ -334,4 +336,21 @@ function wc_setcookie( $name, $value, $expire = 0 ) {
 	} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 		trigger_error( "Cookie cannot be set - headers already sent", E_USER_NOTICE );
 	}
+}
+
+/**
+ * Get the URL to the WooCommerce REST API
+ *
+ * @since 2.1
+ * @param string $path an endpoint to include in the URL
+ * @return string the URL
+ */
+function get_woocommerce_api_url( $path ) {
+
+	$url = get_home_url( null, 'wc-api/v' . WC_API::VERSION . '/', ( 'yes' === get_option( 'woocommerce_force_ssl_checkout' ) ) ? 'https' : 'http' );
+
+	if ( ! empty( $path ) && is_string( $path ) )
+		$url .= ltrim( $path, '/' );
+
+	return $url;
 }

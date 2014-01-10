@@ -17,6 +17,7 @@ if ( ! class_exists( 'WC_Admin_Settings' ) ) :
  */
 class WC_Admin_Settings {
 
+	private static $settings = array();
 	private static $errors   = array();
 	private static $messages = array();
 
@@ -24,22 +25,23 @@ class WC_Admin_Settings {
 	 * Include the settings page classes
 	 */
 	public static function get_settings_pages() {
-		$settings = array();
+		if ( empty( self::$settings ) ) {
+			$settings = array();
 
-		include_once( 'settings/class-wc-settings-page.php' );
+			include_once( 'settings/class-wc-settings-page.php' );
 
-		$settings[] = include( 'settings/class-wc-settings-general.php' );
-		$settings[] = include( 'settings/class-wc-settings-products.php' );
-		$settings[] = include( 'settings/class-wc-settings-checkout.php' );
-		$settings[] = include( 'settings/class-wc-settings-accounts.php' );
-		$settings[] = include( 'settings/class-wc-settings-shipping.php' );
-		$settings[] = include( 'settings/class-wc-settings-tax.php' );
-		$settings[] = include( 'settings/class-wc-settings-emails.php' );
-		$settings[] = include( 'settings/class-wc-settings-integrations.php' );
+			$settings[] = include( 'settings/class-wc-settings-general.php' );
+			$settings[] = include( 'settings/class-wc-settings-products.php' );
+			$settings[] = include( 'settings/class-wc-settings-tax.php' );
+			$settings[] = include( 'settings/class-wc-settings-checkout.php' );
+			$settings[] = include( 'settings/class-wc-settings-shipping.php' );
+			$settings[] = include( 'settings/class-wc-settings-accounts.php' );
+			$settings[] = include( 'settings/class-wc-settings-emails.php' );
+			$settings[] = include( 'settings/class-wc-settings-integrations.php' );
 
-		$settings = apply_filters( 'woocommerce_get_settings_pages', $settings );
-
-		return $settings;
+			self::$settings = apply_filters( 'woocommerce_get_settings_pages', $settings );
+		}
+		return self::$settings;
 	}
 
 	/**
@@ -244,17 +246,27 @@ class WC_Admin_Settings {
 
 	        	// Section Titles
 	            case 'title':
-	            	if ( ! empty( $value['title'] ) ) echo '<h3>' . esc_html( $value['title'] ) . '</h3>';
-	            	if ( ! empty( $value['desc'] ) ) echo wpautop( wptexturize( wp_kses_post( $value['desc'] ) ) );
+	            	if ( ! empty( $value['title'] ) ) {
+	            		echo '<h3>' . esc_html( $value['title'] ) . '</h3>';
+	            	}
+	            	if ( ! empty( $value['desc'] ) ) {
+	            		echo wpautop( wptexturize( wp_kses_post( $value['desc'] ) ) );
+	            	}
 	            	echo '<table class="form-table">'. "\n\n";
-	            	if ( ! empty( $value['id'] ) ) do_action( 'woocommerce_settings_' . sanitize_title( $value['id'] ) );
+	            	if ( ! empty( $value['id'] ) ) {
+	            		do_action( 'woocommerce_settings_' . sanitize_title( $value['id'] ) );
+	            	}
 	            break;
 
 	            // Section Ends
 	            case 'sectionend':
-	            	if ( ! empty( $value['id'] ) ) do_action( 'woocommerce_settings_' . sanitize_title( $value['id'] ) . '_end' );
+	            	if ( ! empty( $value['id'] ) ) {
+	            		do_action( 'woocommerce_settings_' . sanitize_title( $value['id'] ) . '_end' );
+	            	}
 	            	echo '</table>';
-	            	if ( ! empty( $value['id'] ) ) do_action( 'woocommerce_settings_' . sanitize_title( $value['id'] ) . '_after' );
+	            	if ( ! empty( $value['id'] ) ) {
+	            		do_action( 'woocommerce_settings_' . sanitize_title( $value['id'] ) . '_after' );
+	            	}
 	            break;
 
 	            // Standard text inputs and subtypes like 'number'
@@ -512,7 +524,7 @@ class WC_Admin_Settings {
 							<?php echo $tip; ?>
 						</th>
 	                    <td class="forminp"><select name="<?php echo esc_attr( $value['id'] ); ?>" style="<?php echo esc_attr( $value['css'] ); ?>" data-placeholder="<?php _e( 'Choose a country&hellip;', 'woocommerce' ); ?>" title="Country" class="chosen_select">
-				        	<?php echo WC()->countries->country_dropdown_options( $country, $state ); ?>
+				        	<?php WC()->countries->country_dropdown_options( $country, $state ); ?>
 				        </select> <?php echo $description; ?>
 	               		</td>
 	               	</tr><?php
@@ -539,7 +551,7 @@ class WC_Admin_Settings {
 					        	<?php
 					        		if ( $countries )
 					        			foreach ( $countries as $key => $val )
-		                    				echo '<option value="'.$key.'" ' . selected( in_array( $key, $selections ), true, false ).'>' . $val . '</option>';
+		                    				echo '<option value="' . esc_attr( $key ) . '" ' . selected( in_array( $key, $selections ), true, false ).'>' . $val . '</option>';
 		                    	?>
 					        </select> <?php if ( $description ) echo $description; ?> </br><a class="select_all button" href="#"><?php _e( 'Select all', 'woocommerce' ); ?></a> <a class="select_none button" href="#"><?php _e( 'Select none', 'woocommerce' ); ?></a>
 	               		</td>
@@ -561,6 +573,7 @@ class WC_Admin_Settings {
 	 *
 	 * @access public
 	 * @param array $options Opens array to output
+	 * @return bool
 	 */
 	public static function save_fields( $options ) {
 	    if ( empty( $_POST ) )
@@ -648,7 +661,7 @@ class WC_Admin_Settings {
 			        } else {
 
 				       if ( isset( $_POST[$value['id']] ) ) {
-			            	$option_value = woocommerce_clean( stripslashes( $_POST[ $value['id'] ] ) );
+			            	$option_value = wc_clean( stripslashes( $_POST[ $value['id'] ] ) );
 			            } else {
 			                $option_value = '';
 			            }
@@ -663,7 +676,7 @@ class WC_Admin_Settings {
 
 		    		// Get countries array
 					if ( isset( $_POST[ $value['id'] ] ) )
-						$selected_countries = array_map( 'woocommerce_clean', array_map( 'stripslashes', (array) $_POST[ $value['id'] ] ) );
+						$selected_countries = array_map( 'wc_clean', array_map( 'stripslashes', (array) $_POST[ $value['id'] ] ) );
 					else
 						$selected_countries = array();
 
@@ -675,8 +688,8 @@ class WC_Admin_Settings {
 
 			    	if ( isset( $_POST[$value['id'] ]['width'] ) ) {
 
-		              	$update_options[ $value['id'] ]['width']  = woocommerce_clean( stripslashes( $_POST[ $value['id'] ]['width'] ) );
-		              	$update_options[ $value['id'] ]['height'] = woocommerce_clean( stripslashes( $_POST[ $value['id'] ]['height'] ) );
+		              	$update_options[ $value['id'] ]['width']  = wc_clean( stripslashes( $_POST[ $value['id'] ]['width'] ) );
+		              	$update_options[ $value['id'] ]['height'] = wc_clean( stripslashes( $_POST[ $value['id'] ]['height'] ) );
 
 						if ( isset( $_POST[ $value['id'] ]['crop'] ) )
 							$update_options[ $value['id'] ]['crop'] = 1;

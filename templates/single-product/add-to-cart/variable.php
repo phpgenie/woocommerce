@@ -21,7 +21,7 @@ global $woocommerce, $product, $post;
 				<?php $loop = 0; foreach ( $attributes as $name => $options ) : $loop++; ?>
 					<tr>
 						<td class="label"><label for="<?php echo sanitize_title($name); ?>"><?php echo wc_attribute_label( $name ); ?></label></td>
-						<td class="value"><select id="<?php echo esc_attr( sanitize_title($name) ); ?>" name="attribute_<?php echo sanitize_title($name); ?>">
+						<td class="value"><select id="<?php echo esc_attr( sanitize_title( $name ) ); ?>" name="attribute_<?php echo sanitize_title( $name ); ?>">
 							<option value=""><?php echo __( 'Choose an option', 'woocommerce' ) ?>&hellip;</option>
 							<?php
 								if ( is_array( $options ) ) {
@@ -44,10 +44,10 @@ global $woocommerce, $product, $post;
 												$args = array( 'orderby' => 'name', 'hide_empty' => false, 'menu_order' => false );
 											break;
 											case 'id' :
-												$args = array( 'orderby' => 'id', 'order' => 'ASC', 'menu_order' => false );
+												$args = array( 'orderby' => 'id', 'order' => 'ASC', 'menu_order' => false, 'hide_empty' => false );
 											break;
 											case 'menu_order' :
-												$args = array( 'menu_order' => 'ASC' );
+												$args = array( 'menu_order' => 'ASC', 'hide_empty' => false );
 											break;
 										}
 

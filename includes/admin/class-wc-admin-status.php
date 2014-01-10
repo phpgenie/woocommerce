@@ -105,11 +105,11 @@ class WC_Admin_Status {
 
 					$product_cats = get_terms( 'product_cat', array( 'hide_empty' => false, 'fields' => 'id=>parent' ) );
 
-					_woocommerce_term_recount( $product_cats, get_taxonomy( 'product_cat' ), false, false );
+					_wc_term_recount( $product_cats, get_taxonomy( 'product_cat' ), false, false );
 
 					$product_tags = get_terms( 'product_tag', array( 'hide_empty' => false, 'fields' => 'id=>parent' ) );
 
-					_woocommerce_term_recount( $product_tags, get_taxonomy( 'product_tag' ), false, false );
+					_wc_term_recount( $product_tags, get_taxonomy( 'product_tag' ), false, false );
 
 					echo '<div class="updated"><p>' . __( 'Terms successfully recounted', 'woocommerce' ) . '</p></div>';
 				break;
@@ -122,6 +122,19 @@ class WC_Admin_Status {
 
 					wp_cache_flush();
 
+					echo '<div class="updated"><p>' . __( 'Sessions successfully cleared', 'woocommerce' ) . '</p></div>';
+				break;
+				case "install_pages" :
+					WC_Install::create_pages();
+					echo '<div class="updated"><p>' . __( 'All missing WooCommerce pages was installed successfully.', 'woocommerce' ) . '</p></div>';
+                break;
+                case "delete_taxes" :
+
+					$wpdb->query( "TRUNCATE " . $wpdb->prefix . "woocommerce_tax_rates" );
+
+					$wpdb->query( "TRUNCATE " . $wpdb->prefix . "woocommerce_tax_rate_locations" );
+
+					echo '<div class="updated"><p>' . __( 'Tax rates successfully deleted', 'woocommerce' ) . '</p></div>';
 				break;
 				default:
 					$action = esc_attr( $_GET['action'] );
@@ -139,6 +152,11 @@ class WC_Admin_Status {
 					}
 				break;
 			}
+		}
+		
+	    // Display message if settings settings have been saved
+	    if ( isset( $_REQUEST['settings-updated'] ) ) {
+			echo '<div class="updated"><p>' . __( 'Your changes have been saved.', 'woocommerce' ) . '</p></div>';
 		}
 
 		include_once( 'views/html-admin-page-status-tools.php' );
@@ -174,7 +192,17 @@ class WC_Admin_Status {
 			'clear_sessions' => array(
 				'name'		=> __('Customer Sessions','woocommerce'),
 				'button'	=> __('Clear all sessions','woocommerce'),
-				'desc'		=> __( '<strong class="red">Warning</strong> This tool will delete all customer session data from the database, including any current live carts.', 'woocommerce' ),
+				'desc'		=> __( '<strong class="red">Warning:</strong> This tool will delete all customer session data from the database, including any current live carts.', 'woocommerce' ),
+			),
+			'install_pages' => array(
+				'name'    => __( 'Install WooCommerce Pages', 'woocommerce' ),
+				'button'  => __( 'Install pages', 'woocommerce' ),
+				'desc'    => __( '<strong class="red">Note:</strong> This tool will install all the missing WooCommerce pages. Pages already defined and set up will not be replaced.', 'woocommerce' ),
+			),
+			'delete_taxes' => array(
+				'name'    => __( 'Delete all WooCommerce tax rates', 'woocommerce' ),
+				'button'  => __( 'Delete ALL tax rates', 'woocommerce' ),
+				'desc'    => __( '<strong class="red">Note:</strong> This option will delete ALL of your tax rates, use with caution.', 'woocommerce' ),
 			),
 		) );
 	}
@@ -183,8 +211,8 @@ class WC_Admin_Status {
 	 * Scan the template files
 	 *
 	 * @access public
- 	 * @param mixed $template_path
- 	 * @return void
+ 	 * @param string $template_path
+ 	 * @return array
 	 */
 	public function scan_template_files( $template_path ) {
 		$files         = scandir( $template_path );

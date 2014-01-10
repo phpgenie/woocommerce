@@ -33,7 +33,7 @@ class WC_Widget_Product_Categories extends WC_Widget {
 			'orderby' => array(
 				'type'  => 'select',
 				'std'   => 'name',
-				'label' => __( 'Title', 'woocommerce' ),
+				'label' => __( 'Order by', 'woocommerce' ),
 				'options' => array(
 					'order' => __( 'Category Order', 'woocommerce' ),
 					'name'  => __( 'Name', 'woocommerce' )
@@ -76,10 +76,10 @@ class WC_Widget_Product_Categories extends WC_Widget {
 		extract( $args );
 
 		$title = apply_filters( 'widget_title', $instance['title'], $instance, $this->id_base );
-		$c     = $instance['count'] ? '1' : '0';
+		$c     = ( isset( $instance['count'] ) && $instance['count'] ) ? '1' : '0';
 		$h     = $instance['hierarchical'] ? true : false;
-		$s     = $instance['show_children_only'] ? '1' : '0';
-		$d     = $instance['dropdown'] ? '1' : '0';
+		$s     = ( isset( $instance['show_children_only'] ) && $instance['show_children_only'] ) ? '1' : '0';
+		$d     = ( isset( $instance['dropdown'] ) && $instance['dropdown'] ) ? '1' : '0';
 		$o     = $instance['orderby'] ? $instance['orderby'] : 'order';
 
 		echo $before_widget;
@@ -104,7 +104,7 @@ class WC_Widget_Product_Categories extends WC_Widget {
 		if ( $d ) {
 
 			// Stuck with this until a fix for http://core.trac.wordpress.org/ticket/13258
-			woocommerce_product_dropdown_categories( array(
+			wc_product_dropdown_categories( array(
 				'show_counts'        => $c,
 				'hierarchical'       => $h,
 				'show_uncategorized' => 0,
@@ -147,7 +147,7 @@ class WC_Widget_Product_Categories extends WC_Widget {
 
 			}
 
-			include_once( $woocommerce->plugin_path() . '/includes/walkers/class-product-cat-list-walker.php' );
+			include_once( WC()->plugin_path() . '/includes/walkers/class-product-cat-list-walker.php' );
 
 			$cat_args['walker'] 			= new WC_Product_Cat_List_Walker;
 			$cat_args['title_li'] 			= '';

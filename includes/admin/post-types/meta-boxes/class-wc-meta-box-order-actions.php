@@ -34,8 +34,7 @@ class WC_Meta_Box_Order_Actions {
 					<option value=""><?php _e( 'Actions', 'woocommerce' ); ?></option>
 					<optgroup label="<?php _e( 'Resend order emails', 'woocommerce' ); ?>">
 						<?php
-						global $woocommerce;
-						$mailer = $woocommerce->mailer();
+										$mailer = WC()->mailer();
 
 						$available_emails = apply_filters( 'woocommerce_resend_order_emails_available', array( 'new_order', 'customer_processing_order', 'customer_completed_order', 'customer_invoice' ) );
 						$mails = $mailer->get_emails();
@@ -88,7 +87,7 @@ class WC_Meta_Box_Order_Actions {
 		// Handle button actions
 		if ( ! empty( $_POST['wc_order_action'] ) ) {
 
-			$action = woocommerce_clean( $_POST['wc_order_action'] );
+			$action = wc_clean( $_POST['wc_order_action'] );
 
 			if ( strstr( $action, 'send_email_' ) ) {
 
@@ -113,7 +112,7 @@ class WC_Meta_Box_Order_Actions {
 			} elseif ( $action == 'regenerate_download_permissions' ) {
 
 				delete_post_meta( $post_id, '_download_permissions_granted' );
-				woocommerce_downloadable_product_permissions( $post_id );
+				wc_downloadable_product_permissions( $post_id );
 
 			} else {
 

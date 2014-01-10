@@ -128,7 +128,7 @@ class WC_Admin_Dashboard {
 			<li class="sales-this-month">
 				<a href="<?php echo admin_url( 'admin.php?page=wc-reports&tab=orders&range=month' ); ?>">
 					<?php echo $reports->sales_sparkline( '', max( 7, date( 'd', current_time('timestamp') ) ) ); ?>
-					<?php printf( __( "<strong>%s</strong> sales this month", 'woocommerce' ), woocommerce_price( $sales ) ); ?>
+					<?php printf( __( "<strong>%s</strong> sales this month", 'woocommerce' ), wc_price( $sales ) ); ?>
 				</a>
 			</li>
 			<?php if ( $top_seller && $top_seller->qty ) : ?>
@@ -141,22 +141,22 @@ class WC_Admin_Dashboard {
 			<?php endif; ?>
 			<li class="processing-orders">
 				<a href="<?php echo admin_url( 'edit.php?s&post_status=all&post_type=shop_order&shop_order_status=processing' ); ?>">
-					<?php printf( _n( "<strong>%s order</strong> awaiting processing", "<strong>%s orders</strong> are awaiting processing", $processing_count, 'woocommerce' ), $processing_count ); ?>
+					<?php printf( _n( "<strong>%s order</strong> awaiting processing", "<strong>%s orders</strong> awaiting processing", $processing_count, 'woocommerce' ), $processing_count ); ?>
 				</a>
 			</li>
 			<li class="on-hold-orders">
 				<a href="<?php echo admin_url( 'edit.php?s&post_status=all&post_type=shop_order&shop_order_status=on-hold' ); ?>">
-					<?php printf( _n( "<strong>%s order</strong> are on-hold", "<strong>%s orders</strong> are currently on-hold", $on_hold_count, 'woocommerce' ), $on_hold_count ); ?>
+					<?php printf( _n( "<strong>%s order</strong> on-hold", "<strong>%s orders</strong> on-hold", $on_hold_count, 'woocommerce' ), $on_hold_count ); ?>
 				</a>
 			</li>
 			<li class="low-in-stock">
 				<a href="<?php echo admin_url( 'admin.php?page=wc-reports&tab=stock&report=low_in_stock' ); ?>">
-					<?php printf( _n( "<strong>%s product</strong> low in stock", "<strong>%s products</strong> are low in stock", $lowinstock_count, 'woocommerce' ), $lowinstock_count ); ?>
+					<?php printf( _n( "<strong>%s product</strong> low in stock", "<strong>%s products</strong> low in stock", $lowinstock_count, 'woocommerce' ), $lowinstock_count ); ?>
 				</a>
 			</li>
 			<li class="out-of-stock">
 				<a href="<?php echo admin_url( 'admin.php?page=wc-reports&tab=stock&report=out_of_stock' ); ?>">
-					<?php printf( _n( "<strong>%s product</strong> out of stock", "<strong>%s products</strong> are out of stock", $outofstock_count, 'woocommerce' ), $outofstock_count ); ?>
+					<?php printf( _n( "<strong>%s product</strong> out of stock", "<strong>%s products</strong> out of stock", $outofstock_count, 'woocommerce' ), $outofstock_count ); ?>
 				</a>
 			</li>
 		</ul>
@@ -188,7 +188,7 @@ class WC_Admin_Dashboard {
 
 				$rating = get_comment_meta( $comment->comment_ID, 'rating', true );
 
-				echo '<div class="star-rating" title="' . $rating . '">
+				echo '<div class="star-rating" title="' . esc_attr( $rating ) . '">
 					<span style="width:'. ( $rating * 20 ) . '%">' . $rating . ' ' . __( 'out of 5', 'woocommerce' ) . '</span></div>';
 
 				echo '<h4 class="meta"><a href="' . get_permalink( $comment->ID ) . '#comment-' . absint( $comment->comment_ID ) .'">' . esc_html__( $comment->post_title ) . '</a> reviewed by ' . esc_html( $comment->comment_author ) .'</h4>';

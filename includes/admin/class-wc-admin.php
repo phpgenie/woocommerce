@@ -12,17 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 if ( ! class_exists( 'WC_Admin' ) ) :
 
-/**
- * @todo Load all pages conditonally when needed from this class
- */
 class WC_Admin {
 
 	/**
 	 * Constructor
 	 */
 	public function __construct() {
-		add_filter( 'init', array( $this, 'includes' ) );
-		add_filter( 'current_screen', array( $this, 'conditonal_includes' ) );
+		add_action( 'init', array( $this, 'includes' ) );
+		add_action( 'current_screen', array( $this, 'conditonal_includes' ) );
 		add_action( 'admin_init', array( $this, 'prevent_admin_access' ) );
 		add_action( 'wp_ajax_page_slurp', array( 'WC_Gateway_Mijireh', 'page_slurp' ) );
 		add_action( 'admin_init', array( $this, 'preview_emails' ) );
@@ -38,18 +35,22 @@ class WC_Admin {
 		include( 'wc-meta-box-functions.php' );
 
 		// Classes
-		include( 'class-wc-admin-menus.php' );
-		include( 'class-wc-admin-welcome.php' );
-		include( 'class-wc-admin-notices.php' );
-		include( 'class-wc-admin-assets.php' );
-		include( 'class-wc-admin-permalink-settings.php' );
 		include( 'class-wc-admin-post-types.php' );
 		include( 'class-wc-admin-taxonomies.php' );
-		include( 'class-wc-admin-editor.php' );
 
-		// Help
-		if ( apply_filters( 'woocommerce_enable_admin_help_tab', true ) )
-			include( 'class-wc-admin-help.php' );
+		// Classes we only need if the ajax is not-ajax
+		if ( ! is_ajax() ) {
+			include( 'class-wc-admin-menus.php' );
+			include( 'class-wc-admin-welcome.php' );
+			include( 'class-wc-admin-notices.php' );
+			include( 'class-wc-admin-assets.php' );
+			include( 'class-wc-admin-permalink-settings.php' );
+			include( 'class-wc-admin-editor.php' );
+
+			// Help
+			if ( apply_filters( 'woocommerce_enable_admin_help_tab', true ) )
+				include( 'class-wc-admin-help.php' );
+		}
 
 		// Importers
 		if ( defined( 'WP_LOAD_IMPORTERS' ) )
@@ -69,6 +70,7 @@ class WC_Admin {
 			case 'users' :
 			case 'user' :
 			case 'profile' :
+			case 'user-edit' :
 				include( 'class-wc-admin-profile.php' );
 			break;
 		}
@@ -87,7 +89,7 @@ class WC_Admin {
 		$prevent_access = apply_filters( 'woocommerce_prevent_admin_access', $prevent_access );
 
 		if ( $prevent_access ) {
-			wp_safe_redirect( get_permalink( woocommerce_get_page_id( 'myaccount' ) ) );
+			wp_safe_redirect( get_permalink( wc_get_page_id( 'myaccount' ) ) );
 			exit;
 		}
 	}
@@ -109,7 +111,7 @@ class WC_Admin {
 
 			$mailer        = WC()->mailer();
 			$message       = ob_get_clean();
-			$email_heading = __( 'Order Received', 'woocommerce' );
+			$email_heading = __( 'HTML Email Template', 'woocommerce' );
 
 			echo $mailer->wrap_message( $email_heading, $message );
 			exit;

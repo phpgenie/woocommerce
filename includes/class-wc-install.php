@@ -46,14 +46,14 @@ class WC_Install {
 		// Install - Add pages button
 		if ( ! empty( $_GET['install_woocommerce_pages'] ) ) {
 
-			$this->create_pages();
+			self::create_pages();
 
 			// We no longer need to install pages
 			delete_option( '_wc_needs_pages' );
 			delete_transient( '_wc_activation_redirect' );
 
 			// What's new redirect
-			wp_safe_redirect( admin_url( 'index.php?page=wc-about&wc-installed=true' ) );
+			wp_redirect( admin_url( 'index.php?page=wc-about&wc-installed=true' ) );
 			exit;
 
 		// Skip button
@@ -67,7 +67,7 @@ class WC_Install {
 			flush_rewrite_rules();
 
 			// What's new redirect
-			wp_safe_redirect( admin_url( 'index.php?page=wc-about' ) );
+			wp_redirect( admin_url( 'index.php?page=wc-about' ) );
 			exit;
 
 		// Update button
@@ -81,7 +81,7 @@ class WC_Install {
 			delete_transient( '_wc_activation_redirect' );
 
 			// What's new redirect
-			wp_safe_redirect( admin_url( 'index.php?page=wc-about&wc-updated=true' ) );
+			wp_redirect( admin_url( 'index.php?page=wc-about&wc-updated=true' ) );
 			exit;
 		}
 	}
@@ -121,7 +121,7 @@ class WC_Install {
 		update_option( 'woocommerce_version', WC()->version );
 
 		// Check if pages are needed
-		if ( woocommerce_get_page_id( 'shop' ) < 1 )
+		if ( wc_get_page_id( 'shop' ) < 1 )
 			update_option( '_wc_needs_pages', 1 );
 
 		// Flush rewrite rules
@@ -184,7 +184,7 @@ class WC_Install {
 
 		$ve = get_option('gmt_offset') > 0 ? '+' : '-';
 
-		wp_schedule_event( strtotime( 'tomorrow ' . $ve . get_option('gmt_offset') . ' HOURS' ), 'daily', 'woocommerce_scheduled_sales');
+		wp_schedule_event( strtotime( '00:00 tomorrow ' . $ve . get_option('gmt_offset') . ' HOURS' ), 'daily', 'woocommerce_scheduled_sales');
 
 		$held_duration = get_option( 'woocommerce_hold_stock_minutes', null );
 
@@ -203,7 +203,7 @@ class WC_Install {
 	 * @access public
 	 * @return void
 	 */
-	private function create_pages() {
+	public static function create_pages() {
 		$pages = apply_filters( 'woocommerce_create_pages', array(
 			'shop' => array(
 				'name'    => _x( 'shop', 'page_slug', 'woocommerce' ),
@@ -228,7 +228,7 @@ class WC_Install {
 		) );
 
 		foreach ( $pages as $key => $page )
-			wc_create_page( esc_sql( $page['name'] ), 'woocommerce_' . $key . '_page_id', $page['title'], $page['content'], ! empty( $page['parent'] ) ? woocommerce_get_page_id( $page['parent'] ) : '' );
+			wc_create_page( esc_sql( $page['name'] ), 'woocommerce_' . $key . '_page_id', $page['title'], $page['content'], ! empty( $page['parent'] ) ? wc_get_page_id( $page['parent'] ) : '' );
 	}
 
 	/**
@@ -465,7 +465,8 @@ class WC_Install {
 			    'unfiltered_html'        => true,
 			    'upload_files'           => true,
 			   	'export'                 => true,
-				'import'                 => true
+				'import'                 => true,
+				'list_users'             => true
 			) );
 
 			$capabilities = $this->get_core_capabilities();
@@ -483,7 +484,7 @@ class WC_Install {
 	 * Get capabilities for WooCommerce - these are assigned to admin/shop manager during installation or reset
 	 *
 	 * @access public
-	 * @return void
+	 * @return array
 	 */
 	public function get_core_capabilities() {
 		$capabilities = array();

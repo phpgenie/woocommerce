@@ -42,7 +42,7 @@ $col = 1;
 	<div class="col-<?php echo ( ( $col = $col * -1 ) < 0 ) ? 1 : 2; ?> address">
 		<header class="title">
 			<h3><?php echo $title; ?></h3>
-			<a href="<?php echo woocommerce_get_endpoint_url( 'edit-address', $name ); ?>" class="edit"><?php _e( 'Edit', 'woocommerce' ); ?></a>
+			<a href="<?php echo wc_get_endpoint_url( 'edit-address', $name ); ?>" class="edit"><?php _e( 'Edit', 'woocommerce' ); ?></a>
 		</header>
 		<address>
 			<?php
@@ -58,7 +58,7 @@ $col = 1;
 					'country'		=> get_user_meta( $customer_id, $name . '_country', true )
 				), $customer_id, $name );
 
-				$formatted_address = $woocommerce->countries->get_formatted_address( $address );
+				$formatted_address = WC()->countries->get_formatted_address( $address );
 
 				if ( ! $formatted_address )
 					_e( 'You have not set up this type of address yet.', 'woocommerce' );

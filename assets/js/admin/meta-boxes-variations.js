@@ -87,6 +87,12 @@ jQuery( function($){
 					$('#variable_product_options').load( this_page + ' #variable_product_options_inner', function() {
 						$('#variable_product_options').unblock();
 						jQuery('#variable_product_options').trigger('woocommerce_variations_added');
+						
+						jQuery(".tips").tipTip({
+					    	'attribute' : 'data-tip',
+					    	'fadeIn' : 50,
+					    	'fadeOut' : 50
+					    });
 					} );
 				} else {
 					$('#variable_product_options').unblock();
@@ -225,6 +231,10 @@ jQuery( function($){
 
 				jQuery( ':input[name^="' + bulk_edit + '["]').val( value ).change();
 			break;
+			default:
+				jQuery('select#field_to_edit').trigger(bulk_edit);
+			break;
+
 		}
 	});
 
@@ -302,7 +312,13 @@ jQuery( function($){
 				title: woocommerce_admin_meta_boxes_variations.i18n_choose_image,
 				button: {
 					text: woocommerce_admin_meta_boxes_variations.i18n_set_image
-				}
+				},
+				states : [
+					new wp.media.controller.Library({
+						title: woocommerce_admin_meta_boxes_variations.i18n_choose_image,
+						filterable :	'all'
+					})
+				]
 			});
 
 			// When an image is selected, run a callback.

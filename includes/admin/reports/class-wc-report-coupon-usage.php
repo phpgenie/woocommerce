@@ -66,7 +66,7 @@ class WC_Report_Coupon_Usage extends WC_Admin_Report {
 		) ) );
 
 		$legend[] = array(
-			'title' => sprintf( __( '%s discounts in total', 'woocommerce' ), '<strong>' . woocommerce_price( $total_discount ) . '</strong>' ),
+			'title' => sprintf( __( '%s discounts in total', 'woocommerce' ), '<strong>' . wc_price( $total_discount ) . '</strong>' ),
 			'color' => $this->chart_colours['discount_amount'],
 			'highlight_series' => 1
 		);
@@ -160,7 +160,7 @@ class WC_Report_Coupon_Usage extends WC_Admin_Report {
 							if ( $used_coupons ) {
 								echo '<option value="">' . __( 'All coupons', 'woocommerce' ) . '</option>';
 								foreach ( $used_coupons as $coupon ) {
-									echo '<option value="' . $coupon . '" ' . selected( in_array( $coupon, $this->coupon_codes ), true, false ) . '>' . $coupon . '</option>';
+									echo '<option value="' . esc_attr( $coupon ) . '" ' . selected( in_array( $coupon, $this->coupon_codes ), true, false ) . '>' . $coupon . '</option>';
 								}
 							} else
 								echo '<option value="">' . __( 'No used coupons found', 'woocommerce' ) . '</option>';
@@ -265,7 +265,7 @@ class WC_Report_Coupon_Usage extends WC_Admin_Report {
 				if ( $most_discount ) {
 					foreach ( $most_discount as $coupon ) {
 						echo '<tr class="' . ( in_array( $coupon->coupon_code, $this->coupon_codes ) ? 'active' : '' ) . '">
-							<td class="count" width="1%">' . woocommerce_price( $coupon->discount_amount ) . '</td>
+							<td class="count" width="1%">' . wc_price( $coupon->discount_amount ) . '</td>
 							<td class="name"><a href="' . add_query_arg( 'coupon_codes', $coupon->coupon_code ) . '">' . $coupon->coupon_code . '</a></td>
 						</tr>';
 					}

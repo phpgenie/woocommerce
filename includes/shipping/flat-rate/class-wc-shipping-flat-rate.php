@@ -69,7 +69,6 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 	 * @return void
 	 */
 	function init_form_fields() {
-		global $woocommerce;
 
 		$this->form_fields = array(
 			'enabled' => array(
@@ -101,7 +100,7 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 							'class'			=> 'chosen_select',
 							'css'			=> 'width: 450px;',
 							'default' 		=> '',
-							'options'		=> $woocommerce->countries->get_shipping_countries(),
+							'options'		=> WC()->countries->get_shipping_countries(),
 							'custom_attributes' => array(
 								'data-placeholder' => __( 'Select some countries', 'woocommerce' )
 							)
@@ -117,12 +116,11 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 						),
 			'cost_per_order' => array(
 							'title' 		=> __( 'Cost per order', 'woocommerce' ),
-							'type' 			=> 'text',
-							'class'         => 'wc_input_decimal',
-							'description'	=> __( 'Enter a cost (excluding tax) per order, e.g. 5.00. Leave blank to disable.', 'woocommerce' ),
+							'type' 			=> 'price',
+							'placeholder'	=> wc_format_localized_price( 0 ),
+							'description'	=> __( 'Enter a cost (excluding tax) per order, e.g. 5.00. Default is 0.', 'woocommerce' ),
 							'default'		=> '',
-							'desc_tip'		=> true,
-							'placeholder'	=> '0.00',
+							'desc_tip'		=> true
 						),
 			'options' => array(
 							'title' 		=> __( 'Additional Rates', 'woocommerce' ),
@@ -152,12 +150,11 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 						),
 			'minimum_fee' => array(
 							'title' 		=> __( 'Minimum Handling Fee', 'woocommerce' ),
-							'type' 			=> 'text',
-							'class'         => 'wc_input_decimal',
+							'type' 			=> 'price',
+							'placeholder'	=> wc_format_localized_price( 0 ),
 							'description'	=> __( 'Enter a minimum fee amount. Fee\'s less than this will be increased. Leave blank to disable.', 'woocommerce' ),
 							'default'		=> '',
-							'desc_tip'		=> true,
-							'placeholder'	=> '0.00'
+							'desc_tip'		=> true
 						),
 			);
 
@@ -172,7 +169,6 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 	 * @return void
 	 */
 	function calculate_shipping( $package = array() ) {
-		global $woocommerce;
 
 		$this->rates 		= array();
 		$cost_per_order 	= ( isset( $this->cost_per_order ) && ! empty( $this->cost_per_order ) ) ? $this->cost_per_order : 0;
@@ -386,6 +382,7 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 	function class_shipping( $package ) {
 		$cost 	= null;
 		$fee 	= null;
+		$matched = false;
 
 		if ( sizeof( $this->flat_rates ) > 0 || $this->cost !== '' ) {
 
@@ -403,8 +400,6 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 					$found_shipping_classes_values[ $shipping_class ] += $product['data']->get_price() * $product['quantity'];
 				}
 			}
-
-			$matched = false;
 
 			// For each found class, add up the costs and fees
 			foreach ( $found_shipping_classes_values as $shipping_class => $class_price ) {
@@ -502,7 +497,7 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 	 *
 	 * @access public
 	 * @param mixed $key
-	 * @return void
+	 * @return bool
 	 */
 	function validate_additional_costs_table_field( $key ) {
 		return false;
@@ -512,10 +507,9 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 	 * generate_additional_costs_html function.
 	 *
 	 * @access public
-	 * @return void
+	 * @return string
 	 */
 	function generate_additional_costs_table_html() {
-		global $woocommerce;
 		ob_start();
 		?>
 		<tr valign="top">
@@ -539,8 +533,8 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 						<tr>
 							<td></td>
 							<td class="flat_rate_class"><?php _e( 'Any class', 'woocommerce' ); ?></td>
-							<td><input type="text" value="<?php echo esc_attr( $this->cost ); ?>" name="default_cost" placeholder="<?php _e( 'N/A', 'woocommerce' ); ?>" size="4" class="wc_input_decimal" /></td>
-							<td><input type="text" value="<?php echo esc_attr( $this->fee ); ?>" name="default_fee" placeholder="<?php _e( 'N/A', 'woocommerce' ); ?>" size="4" class="wc_input_decimal" /></td>
+							<td><input type="text" value="<?php echo esc_attr( wc_format_localized_price( $this->cost ) ); ?>" name="default_cost" placeholder="<?php _e( 'N/A', 'woocommerce' ); ?>" size="4" class="wc_input_price" /></td>
+							<td><input type="text" value="<?php echo esc_attr( wc_format_localized_price( $this->fee ) ); ?>" name="default_fee" placeholder="<?php _e( 'N/A', 'woocommerce' ); ?>" size="4" class="wc_input_price" /></td>
 						</tr>
 						<?php
 						$i = -1;
@@ -553,9 +547,9 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 									<td class="flat_rate_class">
 											<select name="' . esc_attr( $this->id . '_class[' . $i . ']' ) . '" class="select">';
 
-								if ( $woocommerce->shipping->get_shipping_classes() ) {
-									foreach ( $woocommerce->shipping->get_shipping_classes() as $shipping_class ) {
-										echo '<option value="'.$shipping_class->slug.'" '.selected($shipping_class->slug, $class, false).'>'.$shipping_class->name.'</option>';
+								if ( WC()->shipping->get_shipping_classes() ) {
+									foreach ( WC()->shipping->get_shipping_classes() as $shipping_class ) {
+										echo '<option value="' . esc_attr( $shipping_class->slug ) . '" '.selected($shipping_class->slug, $class, false).'>'.$shipping_class->name.'</option>';
 									}
 								} else {
 									echo '<option value="">'.__( 'Select a class&hellip;', 'woocommerce' ).'</option>';
@@ -563,8 +557,8 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 
 								echo '</select>
 							   		</td>
-									<td><input type="text" value="' . esc_attr( $rate['cost'] ) . '" name="' . esc_attr( $this->id .'_cost[' . $i . ']' ) . '" placeholder="'.__( '0.00', 'woocommerce' ).'" size="4" class="wc_input_decimal" /></td>
-									<td><input type="text" value="' . esc_attr( $rate['fee'] ) . '" name="' . esc_attr( $this->id .'_fee[' . $i . ']' ) . '" placeholder="'.__( '0.00', 'woocommerce' ).'" size="4" class="wc_input_decimal" /></td>
+									<td><input type="text" value="' . esc_attr( $rate['cost'] ) . '" name="' . esc_attr( $this->id .'_cost[' . $i . ']' ) . '" placeholder="' . wc_format_localized_price( 0 ) . '" size="4" class="wc_input_price" /></td>
+									<td><input type="text" value="' . esc_attr( $rate['fee'] ) . '" name="' . esc_attr( $this->id .'_fee[' . $i . ']' ) . '" placeholder="' . wc_format_localized_price( 0 ) . '" size="4" class="wc_input_price" /></td>
 								</tr>';
 							}
 						}
@@ -583,8 +577,8 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 								<td class="flat_rate_class">\
 									<select name="<?php echo $this->id; ?>_class[' + size + ']" class="select">\
 						   				<?php
-						   				if ($woocommerce->shipping->get_shipping_classes()) :
-											foreach ($woocommerce->shipping->get_shipping_classes() as $class) :
+						   				if (WC()->shipping->get_shipping_classes()) :
+											foreach (WC()->shipping->get_shipping_classes() as $class) :
 												echo '<option value="' . esc_attr( $class->slug ) . '">' . esc_js( $class->name ) . '</option>';
 											endforeach;
 										else :
@@ -593,8 +587,8 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 						   				?>\
 						   			</select>\
 						   		</td>\
-								<td><input type="text" name="<?php echo $this->id; ?>_cost[' + size + ']" placeholder="0.00" size="4" class="wc_input_decimal" /></td>\
-								<td><input type="text" name="<?php echo $this->id; ?>_fee[' + size + ']" placeholder="0.00" size="4" class="wc_input_decimal" /></td>\
+								<td><input type="text" name="<?php echo $this->id; ?>_cost[' + size + ']" placeholder="<?php echo wc_format_localized_price( 0 ); ?>" size="4" class="wc_input_price" /></td>\
+								<td><input type="text" name="<?php echo $this->id; ?>_fee[' + size + ']" placeholder="<?php echo wc_format_localized_price( 0 ); ?>" size="4" class="wc_input_price" /></td>\
 							</tr>').appendTo('#<?php echo $this->id; ?>_flat_rates table tbody');
 
 							return false;
@@ -632,7 +626,7 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 		$flat_rate_fee = array();
 		$flat_rates = array();
 
-		if ( isset( $_POST[ $this->id . '_class'] ) ) $flat_rate_class = array_map( 'woocommerce_clean', $_POST[ $this->id . '_class'] );
+		if ( isset( $_POST[ $this->id . '_class'] ) ) $flat_rate_class = array_map( 'wc_clean', $_POST[ $this->id . '_class'] );
 		if ( isset( $_POST[ $this->id . '_cost'] ) )  $flat_rate_cost  = array_map( 'stripslashes', $_POST[ $this->id . '_cost'] );
 		if ( isset( $_POST[ $this->id . '_fee'] ) )   $flat_rate_fee   = array_map( 'stripslashes', $_POST[ $this->id . '_fee'] );
 
@@ -645,12 +639,12 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 		for ( $i = 0; $i <= $key; $i++ ) {
 			if ( ! empty( $flat_rate_class[ $i ] ) && isset( $flat_rate_cost[ $i ] ) && isset( $flat_rate_fee[ $i ] ) ) {
 
-				$flat_rate_cost[ $i ] = woocommerce_format_decimal( $flat_rate_cost[$i], 2 );
+				$flat_rate_cost[ $i ] = wc_format_decimal( $flat_rate_cost[$i] );
 
 				if ( ! strstr( $flat_rate_fee[$i], '%' ) )
-					$flat_rate_fee[ $i ] = woocommerce_format_decimal( $flat_rate_fee[$i], 2 );
+					$flat_rate_fee[ $i ] = wc_format_decimal( $flat_rate_fee[$i] );
 				else
-					$flat_rate_fee[ $i ] = woocommerce_clean( $flat_rate_fee[$i] );
+					$flat_rate_fee[ $i ] = wc_clean( $flat_rate_fee[$i] );
 
 				// Add to flat rates array
 				$flat_rates[ sanitize_title($flat_rate_class[$i]) ] = array(
@@ -669,16 +663,16 @@ class WC_Shipping_Flat_Rate extends WC_Shipping_Method {
 	 * save_default_costs function.
 	 *
 	 * @access public
-	 * @param mixed $values
-	 * @return void
+	 * @param array $fields
+	 * @return array
 	 */
 	function save_default_costs( $fields ) {
-	 	$default_cost = ( $_POST['default_cost'] === '' ) ? '' : woocommerce_format_decimal( $_POST['default_cost'], false );
+	 	$default_cost = ( $_POST['default_cost'] === '' ) ? '' : wc_format_decimal( $_POST['default_cost'] );
 
 	 	if ( ! strstr( $_POST['default_fee'], '%' ) )
-	 		$default_fee  = ( $_POST['default_fee'] === '' ) ? '' : woocommerce_format_decimal( $_POST['default_fee'], false );
+	 		$default_fee  = ( $_POST['default_fee'] === '' ) ? '' : wc_format_decimal( $_POST['default_fee'] );
 	 	else
-	 		$default_fee = woocommerce_clean( $_POST['default_fee'] );
+	 		$default_fee = wc_clean( $_POST['default_fee'] );
 
 	 	$fields['cost'] = $default_cost;
 	 	$fields['fee']  = $default_fee;

@@ -13,15 +13,15 @@ global $post, $wp_query;
 
 $prepend      = '';
 $permalinks   = get_option( 'woocommerce_permalinks' );
-$shop_page_id = woocommerce_get_page_id( 'shop' );
+$shop_page_id = wc_get_page_id( 'shop' );
 $shop_page    = get_post( $shop_page_id );
 
 // If permalinks contain the shop page in the URI prepend the breadcrumb with shop
-if ( $shop_page_id && strstr( $permalinks['product_base'], '/' . $shop_page->post_name ) && get_option( 'page_on_front' ) !== $shop_page_id ) {
+if ( $shop_page_id && $shop_page && strstr( $permalinks['product_base'], '/' . $shop_page->post_name ) && get_option( 'page_on_front' ) !== $shop_page_id ) {
 	$prepend = $before . '<a href="' . get_permalink( $shop_page ) . '">' . $shop_page->post_title . '</a> ' . $after . $delimiter;
 }
 
-if ( ( ! is_home() && ! is_front_page() && ! ( is_post_type_archive() && get_option( 'page_on_front' ) == woocommerce_get_page_id( 'shop' ) ) ) || is_paged() ) {
+if ( ( ! is_home() && ! is_front_page() && ! ( is_post_type_archive() && get_option( 'page_on_front' ) == wc_get_page_id( 'shop' ) ) ) || is_paged() ) {
 
 	echo $wrap_before;
 
@@ -79,7 +79,7 @@ if ( ( ! is_home() && ! is_front_page() && ! ( is_post_type_archive() && get_opt
 
 	} elseif ( is_post_type_archive('product') && get_option('page_on_front') !== $shop_page_id ) {
 
-		$_name = woocommerce_get_page_id( 'shop' ) ? get_the_title( woocommerce_get_page_id( 'shop' ) ) : '';
+		$_name = wc_get_page_id( 'shop' ) ? get_the_title( wc_get_page_id( 'shop' ) ) : '';
 
 		if ( ! $_name ) {
 			$product_post_type = get_post_type_object( 'product' );
@@ -117,7 +117,8 @@ if ( ( ! is_home() && ! is_front_page() && ! ( is_post_type_archive() && get_opt
 				foreach ( $ancestors as $ancestor ) {
 					$ancestor = get_term( $ancestor, 'product_cat' );
 
-					echo $before . '<a href="' . get_term_link( $ancestor->slug, 'product_cat' ) . '">' . $ancestor->name . '</a>' . $after . $delimiter;
+					if ( ! is_wp_error( $ancestor ) && $ancestor )
+						echo $before . '<a href="' . get_term_link( $ancestor->slug, 'product_cat' ) . '">' . $ancestor->name . '</a>' . $after . $delimiter;
 				}
 
 				echo $before . '<a href="' . get_term_link( $main_term->slug, 'product_cat' ) . '">' . $main_term->name . '</a>' . $after . $delimiter;

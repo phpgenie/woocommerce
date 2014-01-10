@@ -41,9 +41,9 @@ class WC_Admin_CPT_Shop_Order extends WC_Admin_CPT {
 		add_filter( 'request', array( $this, 'orders_by_customer_query' ) );
 		add_filter( "manage_edit-shop_order_sortable_columns", array( $this, 'custom_shop_order_sort' ) );
 		add_filter( 'request', array( $this, 'custom_shop_order_orderby' ) );
-		add_filter( 'parse_query', array( $this, 'shop_order_search_custom_fields' ) );
 		add_filter( 'get_search_query', array( $this, 'shop_order_search_label' ) );
 		add_filter( 'query_vars', array( $this, 'add_custom_query_var' ) );
+		add_action( 'parse_query', array( $this, 'shop_order_search_custom_fields' ) );
 		add_action( 'before_delete_post', array( $this, 'delete_order_items' ) );
 
 		// Bulk edit
@@ -118,12 +118,10 @@ class WC_Admin_CPT_Shop_Order extends WC_Admin_CPT {
 				if ( '0000-00-00 00:00:00' == $post->post_date ) {
 					$t_time = $h_time = __( 'Unpublished', 'woocommerce' );
 				} else {
-					$t_time = get_the_time( __( 'Y/m/d g:i:s A', 'woocommerce' ), $post );
-
-					$gmt_time = strtotime( $post->post_date_gmt . ' UTC' );
-					$time_diff = current_time('timestamp', 1) - $gmt_time;
-
-					$h_time = get_the_time( __( 'Y/m/d', 'woocommerce' ), $post );
+					$t_time    = get_the_time( __( 'Y/m/d g:i:s A', 'woocommerce' ), $post );
+					$gmt_time  = strtotime( $post->post_date_gmt . ' UTC' );
+					$time_diff = current_time( 'timestamp', 1 ) - $gmt_time;
+					$h_time    = get_the_time( __( 'Y/m/d', 'woocommerce' ), $post );
 				}
 
 				echo '<abbr title="' . esc_attr( $t_time ) . '">' . esc_html( apply_filters( 'post_date_column_time', $h_time, $post ) ) . '</abbr>';
@@ -217,10 +215,10 @@ class WC_Admin_CPT_Shop_Order extends WC_Admin_CPT {
 	        	$customer_tip = '';
 
 	        	if ( $address = $the_order->get_formatted_billing_address() )
-	        		$customer_tip .= __( 'Billing:' ) . ' ' . $address . '<br/><br/>';
+	        		$customer_tip .= __( 'Billing:', 'woocommerce' ) . ' ' . $address . '<br/><br/>';
 
 	        	if ( $the_order->billing_phone )
-        			$customer_tip .= __( 'Tel:' ) . ' ' . $the_order->billing_phone;
+        			$customer_tip .= __( 'Tel:', 'woocommerce' ) . ' ' . $the_order->billing_phone;
 
 				echo '<div class="tips" data-tip="' . esc_attr( $customer_tip ) . '">';
 
@@ -281,14 +279,14 @@ class WC_Admin_CPT_Shop_Order extends WC_Admin_CPT {
 
 						if ( in_array( $the_order->status, array( 'pending', 'on-hold' ) ) )
 							$actions['processing'] = array(
-								'url' 		=> wp_nonce_url( admin_url( 'admin-ajax.php?action=woocommerce-mark-order-processing&order_id=' . $post->ID ), 'woocommerce-mark-order-processing' ),
+								'url' 		=> wp_nonce_url( admin_url( 'admin-ajax.php?action=woocommerce_mark_order_processing&order_id=' . $post->ID ), 'woocommerce-mark-order-processing' ),
 								'name' 		=> __( 'Processing', 'woocommerce' ),
 								'action' 	=> "processing"
 							);
 
 						if ( in_array( $the_order->status, array( 'pending', 'on-hold', 'processing' ) ) )
 							$actions['complete'] = array(
-								'url' 		=> wp_nonce_url( admin_url( 'admin-ajax.php?action=woocommerce-mark-order-complete&order_id=' . $post->ID ), 'woocommerce-mark-order-complete' ),
+								'url' 		=> wp_nonce_url( admin_url( 'admin-ajax.php?action=woocommerce_mark_order_complete&order_id=' . $post->ID ), 'woocommerce-mark-order-complete' ),
 								'name' 		=> __( 'Complete', 'woocommerce' ),
 								'action' 	=> "complete"
 							);
@@ -508,19 +506,17 @@ class WC_Admin_CPT_Shop_Order extends WC_Admin_CPT {
 	 * Search custom fields as well as content.
 	 *
 	 * @access public
-	 * @param mixed $wp
+	 * @param WP_Query $wp
 	 * @return void
 	 */
 	public function shop_order_search_custom_fields( $wp ) {
 		global $pagenow, $wpdb;
 
 		if ( 'edit.php' != $pagenow || empty( $wp->query_vars['s'] ) || $wp->query_vars['post_type'] != 'shop_order' )
-			return $wp;
+			return;
 
-		$search_fields = array_map( 'woocommerce_clean', apply_filters( 'woocommerce_shop_order_search_fields', array(
+		$search_fields = array_map( 'wc_clean', apply_filters( 'woocommerce_shop_order_search_fields', array(
 			'_order_key',
-			'_billing_first_name',
-			'_billing_last_name',
 			'_billing_company',
 			'_billing_address_1',
 			'_billing_address_2',
@@ -530,8 +526,6 @@ class WC_Admin_CPT_Shop_Order extends WC_Admin_CPT {
 			'_billing_state',
 			'_billing_email',
 			'_billing_phone',
-			'_shipping_first_name',
-			'_shipping_last_name',
 			'_shipping_address_1',
 			'_shipping_address_2',
 			'_shipping_city',
@@ -550,9 +544,21 @@ class WC_Admin_CPT_Shop_Order extends WC_Admin_CPT {
 				$wpdb->prepare( "
 					SELECT post_id
 					FROM {$wpdb->postmeta}
-					WHERE meta_key IN ('" . implode( "','", $search_fields ) . "')
-					AND meta_value LIKE '%%%s%%'",
+					WHERE meta_key IN ('" . implode( "','", $search_fields ) . "') AND meta_value LIKE '%%%s%%'
+					",
 					esc_attr( $_GET['s'] )
+				)
+			),
+			$wpdb->get_col(
+				$wpdb->prepare( "
+					SELECT p1.post_id
+					FROM {$wpdb->postmeta} p1, {$wpdb->postmeta} p2
+					WHERE
+						( p1.meta_key = '_billing_first_name' AND p2.meta_key = '_billing_last_name' AND CONCAT(p1.meta_value, ' ', p2.meta_value) LIKE '%%%s%%' )
+					OR
+						( p1.meta_key = '_shipping_first_name' AND p2.meta_key = '_shipping_last_name' AND CONCAT(p1.meta_value, ' ', p2.meta_value) LIKE '%%%s%%' )
+					",
+					esc_attr( $_GET['s'] ), esc_attr( $_GET['s'] )
 				)
 			),
 			$wpdb->get_col(
@@ -591,7 +597,7 @@ class WC_Admin_CPT_Shop_Order extends WC_Admin_CPT {
 	    if ( $typenow != 'shop_order' ) return $query;
 		if ( ! get_query_var( 'shop_order_search' ) ) return $query;
 
-		return $_GET['s'];
+		return wp_unslash( $_GET['s'] );
 	}
 
 	/**
@@ -616,14 +622,17 @@ class WC_Admin_CPT_Shop_Order extends WC_Admin_CPT {
 	public function delete_order_items( $postid ) {
 		global $wpdb;
 
-		if ( get_post_type( $postid ) == 'shop_order' )
-		{
+		if ( get_post_type( $postid ) == 'shop_order' ) {
+			do_action( 'woocommerce_delete_order_items', $postid );
+
 			$wpdb->query( "
 				DELETE {$wpdb->prefix}woocommerce_order_items, {$wpdb->prefix}woocommerce_order_itemmeta
 				FROM {$wpdb->prefix}woocommerce_order_items
 				JOIN {$wpdb->prefix}woocommerce_order_itemmeta ON {$wpdb->prefix}woocommerce_order_items.order_item_id = {$wpdb->prefix}woocommerce_order_itemmeta.order_item_id
 				WHERE {$wpdb->prefix}woocommerce_order_items.order_id = '{$postid}';
 				" );
+
+			do_action( 'woocommerce_deleted_order_items', $postid );
 		}
 	}
 

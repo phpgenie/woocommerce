@@ -43,7 +43,6 @@ class WC_Shipping_International_Delivery extends WC_Shipping_Flat_Rate {
 	 * @return void
 	 */
 	function init_form_fields() {
-		global $woocommerce;
 
 		$this->form_fields = array(
 			'enabled' => array(
@@ -75,7 +74,7 @@ class WC_Shipping_International_Delivery extends WC_Shipping_Flat_Rate {
 							'class'			=> 'chosen_select',
 							'css'			=> 'width: 450px;',
 							'default'		=> '',
-							'options'		=> $woocommerce->countries->get_shipping_countries(),
+							'options'		=> WC()->countries->get_shipping_countries(),
 							'custom_attributes' => array(
 								'data-placeholder' => __( 'Select some countries', 'woocommerce' )
 							)
@@ -101,12 +100,11 @@ class WC_Shipping_International_Delivery extends WC_Shipping_Flat_Rate {
 						),
 			'cost' => array(
 							'title'			=> __( 'Cost', 'woocommerce' ),
-							'type' 			=> 'text',
-							'class'         => 'wc_input_decimal',
-							'description'	=> __( 'Cost excluding tax. Enter an amount, e.g. 2.50.', 'woocommerce' ),
+							'type' 			=> 'price',
+							'placeholder'	=> wc_format_localized_price( 0 ),
+							'description'	=> __( 'Cost excluding tax. Enter an amount, e.g. 2.50. Default is 0', 'woocommerce' ),
 							'default'		=> '',
-							'desc_tip'		=> true,
-							'placeholder'	=> '0.00'
+							'desc_tip'		=> true
 						),
 			'fee' => array(
 							'title'			=> __( 'Handling Fee', 'woocommerce' ),
@@ -114,16 +112,15 @@ class WC_Shipping_International_Delivery extends WC_Shipping_Flat_Rate {
 							'description'	=> __( 'Fee excluding tax. Enter an amount, e.g. 2.50, or a percentage, e.g. 5%. Leave blank to disable.', 'woocommerce' ),
 							'default'		=> '',
 							'desc_tip'		=> true,
-							'placeholder'	=> '0.00'
+							'placeholder'	=> wc_format_localized_price( 0 ),
 						),
 			'minimum_fee' => array(
 							'title'			=> __( 'Minimum Handling Fee', 'woocommerce' ),
-							'type' 			=> 'text',
-							'class'         => 'wc_input_decimal',
+							'type' 			=> 'decimal',
 							'description'	=> __( 'Enter a minimum fee amount. Fee\'s less than this will be increased. Leave blank to disable.', 'woocommerce' ),
 							'default'		=> '',
 							'desc_tip'		=> true,
-							'placeholder'	=> '0.00'
+							'placeholder'	=> wc_format_localized_decimal( '0' )
 						),
 			);
 
@@ -138,7 +135,6 @@ class WC_Shipping_International_Delivery extends WC_Shipping_Flat_Rate {
 	 * @return bool
 	 */
 	function is_available( $package ) {
-		global $woocommerce;
 
 		if ($this->enabled=="no") return false;
 

@@ -1,5 +1,9 @@
 jQuery(document).ready(function($) {
 
+	// wc_single_product_params is required to continue, ensure the object exists
+	if (typeof wc_single_product_params === "undefined")
+		return false;
+
 	// Tabs
 	$('.woocommerce-tabs .panel').hide();
 
@@ -23,6 +27,11 @@ jQuery(document).ready(function($) {
 		} else {
 			$('ul.tabs li:first a', $(this)).click();
 		}
+	});
+
+	$('a.woocommerce-review-link').click(function() {
+		$('.reviews_tab a').click();
+		return true;
 	});
 
 	// Star ratings for comments

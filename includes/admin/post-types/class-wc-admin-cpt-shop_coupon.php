@@ -55,6 +55,10 @@ class WC_Admin_CPT_Shop_Coupon extends WC_Admin_CPT {
 		return $text;
 	}
 
+	/**
+	 * Print coupon description textarea field
+	 * @param WP_Post $post
+	 */
 	public function coupon_description_field( $post ) {
 		if ( $post->post_type != 'shop_coupon' )
 			return;
@@ -182,7 +186,7 @@ class WC_Admin_CPT_Shop_Coupon extends WC_Admin_CPT {
 	    if ( $typenow == 'shop_coupon' && ! empty( $_GET['coupon_type'] ) ) {
 
 			$vars['meta_key'] = 'discount_type';
-			$vars['meta_value'] = woocommerce_clean( $_GET['coupon_type'] );
+			$vars['meta_value'] = wc_clean( $_GET['coupon_type'] );
 
 		}
 

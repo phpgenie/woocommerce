@@ -72,7 +72,6 @@ abstract class WC_Shipping_Method extends WC_Settings_API {
 	 * @return void
 	 */
 	function add_rate( $args = array() ) {
-		global $woocommerce;
 
 		$defaults = array(
 			'id' 		=> '',			// ID for the rate
@@ -106,7 +105,7 @@ abstract class WC_Shipping_Method extends WC_Settings_API {
 					// If we have an array of costs we can look up each items tax class and add tax accordingly
 					if ( is_array( $cost ) ) {
 
-						$cart = $woocommerce->cart->get_cart();
+						$cart = WC()->cart->get_cart();
 
 						foreach ( $cost as $cost_key => $amount ) {
 
@@ -157,11 +156,10 @@ abstract class WC_Shipping_Method extends WC_Settings_API {
 	 * has_settings function.
 	 *
 	 * @access public
-	 * @return void
+	 * @return bool
 	 */
 	function has_settings() {
-		if ( $this->has_settings )
-			return true;
+		return ( $this->has_settings );
 	}
 
     /**
@@ -171,8 +169,6 @@ abstract class WC_Shipping_Method extends WC_Settings_API {
      * @return bool
      */
     public function is_available( $package ) {
-    	global $woocommerce;
-
     	if ( $this->enabled == "no" )
     		return false;
 
@@ -180,13 +176,13 @@ abstract class WC_Shipping_Method extends WC_Settings_API {
 		switch ( $this->availability ) {
 			case 'specific' :
 			case 'including' :
-				$ship_to_countries = array_intersect( $this->countries, array_keys( $woocommerce->countries->get_shipping_countries() ) );
+				$ship_to_countries = array_intersect( $this->countries, array_keys( WC()->countries->get_shipping_countries() ) );
 			break;
 			case 'excluding' :
-				$ship_to_countries = array_diff( $this->countries, array_keys( $woocommerce->countries->get_shipping_countries() ) );
+				$ship_to_countries = array_diff( $this->countries, array_keys( WC()->countries->get_shipping_countries() ) );
 			break;
 			default :
-				$ship_to_countries = array_keys( $woocommerce->countries->get_shipping_countries() );
+				$ship_to_countries = array_keys( WC()->countries->get_shipping_countries() );
 			break;
 		}
 

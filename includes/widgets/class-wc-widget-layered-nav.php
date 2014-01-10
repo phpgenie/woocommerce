@@ -49,7 +49,7 @@ class WC_Widget_Layered_Nav extends WC_Widget {
 	 */
 	public function form( $instance ) {
 		$this->init_settings();
-		return parent::form( $instance );
+		parent::form( $instance );
 	}
 
 	/**
@@ -116,7 +116,7 @@ class WC_Widget_Layered_Nav extends WC_Widget {
 		$current_term 	= is_tax() ? get_queried_object()->term_id : '';
 		$current_tax 	= is_tax() ? get_queried_object()->taxonomy : '';
 		$title 			= apply_filters('widget_title', $instance['title'], $instance, $this->id_base);
-		$taxonomy 		= wc_attribute_taxonomy_name($instance['attribute']);
+		$taxonomy 		= isset( $instance['attribute'] ) ? wc_attribute_taxonomy_name($instance['attribute']) : '';
 		$query_type 	= isset( $instance['query_type'] ) ? $instance['query_type'] : 'and';
 		$display_type 	= isset( $instance['display_type'] ) ? $instance['display_type'] : 'list';
 
@@ -212,7 +212,7 @@ class WC_Widget_Layered_Nav extends WC_Widget {
 
 						}
 
-						echo '<option value="' . $term->term_id . '" '.selected( isset( $_GET[ 'filter_' . $taxonomy_filter ] ) ? $_GET[ 'filter_' .$taxonomy_filter ] : '' , $term->term_id, false ) . '>' . $term->name . '</option>';
+						echo '<option value="' . esc_attr( $term->term_id ) . '" '.selected( isset( $_GET[ 'filter_' . $taxonomy_filter ] ) ? $_GET[ 'filter_' .$taxonomy_filter ] : '' , $term->term_id, false ) . '>' . $term->name . '</option>';
 					}
 
 					echo '</select>';
@@ -293,7 +293,7 @@ class WC_Widget_Layered_Nav extends WC_Widget {
 					// Base Link decided by current page
 					if ( defined( 'SHOP_IS_ON_FRONT' ) ) {
 						$link = home_url();
-					} elseif ( is_post_type_archive( 'product' ) || is_page( woocommerce_get_page_id('shop') ) ) {
+					} elseif ( is_post_type_archive( 'product' ) || is_page( wc_get_page_id('shop') ) ) {
 						$link = get_post_type_archive_link( 'product' );
 					} else {
 						$link = get_term_link( get_query_var('term'), get_query_var('taxonomy') );

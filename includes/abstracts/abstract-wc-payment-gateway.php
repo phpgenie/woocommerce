@@ -34,7 +34,7 @@ abstract class WC_Payment_Gateway extends WC_Settings_API {
 	/** @var string Available for all counties or specific. */
 	var $availability;
 
-	/** @var bool True if the method is enabled. */
+	/** @var string 'yes' if the method is enabled. */
 	var $enabled;
 
 	/** @var string Icon for the gateway. */
@@ -54,13 +54,15 @@ abstract class WC_Payment_Gateway extends WC_Settings_API {
 	 * @return string
 	 */
 	public function get_return_url( $order = '' ) {
-		if ( $order )
+		if ( $order ) {
 			$return_url = $order->get_checkout_order_received_url();
-		else
-			$return_url = woocommerce_get_endpoint_url( 'order-received', '', get_permalink( woocommerce_get_page_id( 'checkout' ) ) );
+		} else {
+			$return_url = wc_get_endpoint_url( 'order-received', '', get_permalink( wc_get_page_id( 'checkout' ) ) );
+		}
 
-		if ( is_ssl() || get_option('woocommerce_force_ssl_checkout') == 'yes' )
+		if ( is_ssl() || get_option('woocommerce_force_ssl_checkout') == 'yes' ) {
 			$return_url = str_replace( 'http:', 'https:', $return_url );
+		}
 
 		return apply_filters( 'woocommerce_get_return_url', $return_url );
 	}
@@ -72,8 +74,7 @@ abstract class WC_Payment_Gateway extends WC_Settings_API {
 	 * @return bool
 	 */
 	public function is_available() {
-		if ( $this->enabled == "yes" )
-			return true;
+		return ( $this->enabled === "yes" );
 	}
 
 	/**
@@ -113,9 +114,8 @@ abstract class WC_Payment_Gateway extends WC_Settings_API {
 	 * @return string
 	 */
 	public function get_icon() {
-		global $woocommerce;
 
-		$icon = $this->icon ? '<img src="' . WC_HTTPS::force_https_url( $this->icon ) . '" alt="' . $this->get_title() . '" />' : '';
+		$icon = $this->icon ? '<img src="' . WC_HTTPS::force_https_url( $this->icon ) . '" alt="' . esc_attr( $this->get_title() ) . '" />' : '';
 
 		return apply_filters( 'woocommerce_gateway_icon', $icon, $this->id );
 	}
@@ -161,10 +161,13 @@ abstract class WC_Payment_Gateway extends WC_Settings_API {
      * @return void
      */
     public function payment_fields() {
-        if ( $description = $this->get_description() )
+        if ( $description = $this->get_description() ) {
         	echo wpautop( wptexturize( $description ) );
-        if ( $this->supports( 'default_credit_card_form' ) )
+        }
+
+        if ( $this->supports( 'default_credit_card_form' ) ) {
         	$this->credit_card_form();
+        }
     }
 
 	/**
@@ -198,27 +201,27 @@ abstract class WC_Payment_Gateway extends WC_Settings_API {
 
 		$default_fields = array(
 			'card-number-field' => '<p class="form-row form-row-wide">
-				<label for="' . $this->id . '-card-number">' . __( "Card Number", 'woocommerce' ) . ' <span class="required">*</span></label>
-				<input id="' . $this->id . '-card-number" class="input-text wc-credit-card-form-card-number" type="text" maxlength="20" autocomplete="off" placeholder="•••• •••• •••• ••••" name="' . ( $args['fields_have_names'] ? $this->id . '-card-number' : '' ) . '" />
+				<label for="' . esc_attr( $this->id ) . '-card-number">' . __( "Card Number", 'woocommerce' ) . ' <span class="required">*</span></label>
+				<input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" type="text" maxlength="20" autocomplete="off" placeholder="•••• •••• •••• ••••" name="' . ( $args['fields_have_names'] ? $this->id . '-card-number' : '' ) . '" />
 			</p>',
 			'card-expiry-field' => '<p class="form-row form-row-first">
-				<label for="' . $this->id . '-card-expiry">' . __( "Expiry (MM/YY)", 'woocommerce' ) . ' <span class="required">*</span></label>
-				<input id="' . $this->id . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" type="text" autocomplete="off" placeholder="MM / YY" name="' . ( $args['fields_have_names'] ? $this->id . '-card-expiry' : '' ) . '" />
+				<label for="' . esc_attr( $this->id ) . '-card-expiry">' . __( "Expiry (MM/YY)", 'woocommerce' ) . ' <span class="required">*</span></label>
+				<input id="' . esc_attr( $this->id ) . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" type="text" autocomplete="off" placeholder="MM / YY" name="' . ( $args['fields_have_names'] ? $this->id . '-card-expiry' : '' ) . '" />
 			</p>',
 			'card-cvc-field' => '<p class="form-row form-row-last">
-				<label for="' . $this->id . '-card-cvc">' . __( "Card Code", 'woocommerce' ) . ' <span class="required">*</span></label>
-				<input id="' . $this->id . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" type="text" autocomplete="off" placeholder="CVC" name="' . ( $args['fields_have_names'] ? $this->id . '-card-cvc' : '' ) . '" />
+				<label for="' . esc_attr( $this->id ) . '-card-cvc">' . __( "Card Code", 'woocommerce' ) . ' <span class="required">*</span></label>
+				<input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" type="text" autocomplete="off" placeholder="CVC" name="' . ( $args['fields_have_names'] ? $this->id . '-card-cvc' : '' ) . '" />
 			</p>'
 		);
 
 		$fields = wp_parse_args( $fields, apply_filters( 'woocommerce_credit_card_form_fields', $default_fields, $this->id ) );
 		?>
 		<fieldset id="<?php echo $this->id; ?>-cc-form">
-			<?php do_action( 'woocommerce_credit_card_form_before', $this->id ); ?>
+			<?php do_action( 'woocommerce_credit_card_form_start', $this->id ); ?>
 			<?php echo $fields['card-number-field']; ?>
 			<?php echo $fields['card-expiry-field']; ?>
 			<?php echo $fields['card-cvc-field']; ?>
-			<?php do_action( 'woocommerce_credit_card_form_before', $this->id ); ?>
+			<?php do_action( 'woocommerce_credit_card_form_end', $this->id ); ?>
 			<div class="clear"></div>
 		</fieldset>
 		<?php

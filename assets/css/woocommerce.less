@@ -843,7 +843,6 @@ p.demo_store {
 	}
 
 	/* Star rating */
-
 	.star-rating {
 		float: right;
 		overflow: hidden;
@@ -874,6 +873,16 @@ p.demo_store {
 			top: 0;
 			position: absolute;
 			left: 0;
+		}
+	}
+
+	.woocommerce-product-rating {
+		line-height: 2em;
+		display: block;
+
+		.star-rating {
+			margin: .5em 4px 0 0;
+			float: left;
 		}
 	}
 
@@ -1029,21 +1038,24 @@ p.demo_store {
 	td.product-name {
 		dl.variation {
 			margin: .25em 0;
-			font-size: 0.8751em;
+			.clearfix;
+
 			dt, dd {
-				display: inline;
-			}
-			dd:after {
-				content: '\A';
-				white-space: pre;
+				display: inline-block;
+				float: left;
+				margin-bottom:1em;
 			}
 			dt {
 				font-weight:bold;
 				padding: 0 0 .25em 0;
 				margin: 0 4px 0 0;
+				clear:left;
 			}
 			dd {
 				padding: 0 0 .25em 0;
+				p:last-child {
+					margin-bottom:0;
+				}
 			}
 		}
 		p.backorder_notification {
@@ -1135,24 +1147,26 @@ p.demo_store {
 			}
 			dl {
 				margin: 0;
-				font-size: 0.8751em;
 				padding-left: 1em;
 				border-left: 2px solid rgba(0,0,0,0.1);
+				.clearfix;
 
 				dt, dd {
-					display: inline;
-				}
-				dd:after {
-					content: '\A';
-					white-space: pre;
+					display: inline-block;
+					float: left;
+					margin-botom:1em;
 				}
 				dt {
 					font-weight:bold;
 					padding: 0 0 .25em 0;
 					margin: 0 4px 0 0;
+					clear:left;
 				}
 				dd {
 					padding: 0 0 .25em 0;
+					p:last-child {
+						margin-bottom:0;
+					}
 				}
 			}
 			.star-rating {

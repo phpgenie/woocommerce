@@ -77,7 +77,7 @@ class WC_Product_Variation extends WC_Product {
 
 		// The post doesn't have a parent id, therefore its invalid.
 		if ( empty( $this->id ) )
-			return false;
+			return;
 
 		// Get post data
 		$this->parent = ! empty( $args['parent'] ) ? $args['parent'] : get_product( $this->id );
@@ -150,7 +150,7 @@ class WC_Product_Variation extends WC_Product {
 			$this->sale_price_dates_from = $this->product_custom_fields['_sale_price_dates_from'][0];
 
 		if ( isset( $this->product_custom_fields['_sale_price_dates_to'][0] ) )
-			$this->sale_price_dates_from = $this->product_custom_fields['_sale_price_dates_to'][0];
+			$this->sale_price_dates_to = $this->product_custom_fields['_sale_price_dates_to'][0];
 
 		// Prices
 		$this->price         = isset( $this->product_custom_fields['_price'][0] ) ? $this->product_custom_fields['_price'][0] : '';
@@ -230,7 +230,7 @@ class WC_Product_Variation extends WC_Product {
 			$visible = false;
 
 		// Price not set
-		elseif ( $this->get_price() == "" )
+		elseif ( $this->get_price() === "" )
 			$visible = false;
 
 		return apply_filters( 'woocommerce_variation_is_visible', $visible, $this->variation_id, $this->id );
@@ -297,13 +297,13 @@ class WC_Product_Variation extends WC_Product {
 		if ( $this->get_price() !== '' ) {
 			if ( $this->is_on_sale() ) {
 
-				$price = '<del>' . woocommerce_price( $display_regular_price ) . '</del> <ins>' . woocommerce_price( $display_sale_price ) . '</ins>' . $this->get_price_suffix();
+				$price = '<del>' . wc_price( $display_regular_price ) . '</del> <ins>' . wc_price( $display_sale_price ) . '</ins>' . $this->get_price_suffix();
 
 				$price = apply_filters( 'woocommerce_variation_sale_price_html', $price, $this );
 
 			} elseif ( $this->get_price() > 0 ) {
 
-				$price = woocommerce_price( $display_price ) . $this->get_price_suffix();
+				$price = wc_price( $display_price ) . $this->get_price_suffix();
 
 				$price = apply_filters( 'woocommerce_variation_price_html', $price, $this );
 
@@ -340,7 +340,7 @@ class WC_Product_Variation extends WC_Product {
 		} elseif ( ( $parent_id = wp_get_post_parent_id( $this->id ) ) && has_post_thumbnail( $parent_id ) ) {
 			$image = get_the_post_thumbnail( $parent_id, $size , $attr);
 		} else {
-			$image = woocommerce_placeholder_img( $size );
+			$image = wc_placeholder_img( $size );
 		}
 
 		return $image;
@@ -348,9 +348,10 @@ class WC_Product_Variation extends WC_Product {
 
 	/**
 	 * Set stock level of the product variation.
-	 *
-	 * @param int $amount
-	 * @param boolean $force_variation_stock If true, the variation's stock will be updated and not the parents.
+	 * @param int  $amount
+	 * @param bool $force_variation_stock If true, the variation's stock will be updated and not the parents.
+	 * @return int
+	 * @todo Need to return 0 if is_null? Or something. Should not be just return.
 	 */
 	function set_stock( $amount = null, $force_variation_stock = false ) {
 		if ( is_null( $amount ) )
@@ -486,7 +487,7 @@ class WC_Product_Variation extends WC_Product {
 			$identifier = '#' . $this->variation_id;
 
 		$attributes = $this->get_variation_attributes();
-		$extra_data = ' &ndash; ' . implode( ', ', $attributes ) . ' &ndash; ' . woocommerce_price( $this->get_price() );
+		$extra_data = ' &ndash; ' . implode( ', ', $attributes ) . ' &ndash; ' . wc_price( $this->get_price() );
 
 		return sprintf( __( '%s &ndash; %s%s', 'woocommerce' ), $identifier, $this->get_title(), $extra_data );
 	}

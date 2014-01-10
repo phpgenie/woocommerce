@@ -34,7 +34,7 @@ class WC_Download_Handler {
 			$_product             = get_product( $product_id );
 
 			if ( ! is_email( $email) )
-				wp_die( __( 'Invalid email address.', 'woocommerce' ) . ' <a href="' . home_url() . '">' . __( 'Go to homepage &rarr;', 'woocommerce' ) . '</a>' );
+				wp_die( __( 'Invalid email address.', 'woocommerce' ) . ' <a href="' . esc_url( home_url() ) . '" class="wc-forward">' . __( 'Go to homepage', 'woocommerce' ) . '</a>' );
 
 			$query = "
 				SELECT order_id,downloads_remaining,user_id,download_count,access_expires,download_id
@@ -58,7 +58,7 @@ class WC_Download_Handler {
 			$download_result = $wpdb->get_row( $wpdb->prepare( $query, $args ) );
 
 			if ( ! $download_result )
-				wp_die( __( 'Invalid download.', 'woocommerce' ) . ' <a href="'.home_url().'">' . __( 'Go to homepage &rarr;', 'woocommerce' ) . '</a>' );
+				wp_die( __( 'Invalid download.', 'woocommerce' ) . ' <a href="' . esc_url( home_url() ) . '" class="wc-forward">' . __( 'Go to homepage', 'woocommerce' ) . '</a>' );
 
 			$download_id 			= $download_result->download_id;
 			$order_id 				= $download_result->order_id;
@@ -70,7 +70,7 @@ class WC_Download_Handler {
 			if ( $user_id && get_option( 'woocommerce_downloads_require_login' ) == 'yes' ) {
 
 				if ( ! is_user_logged_in() )
-					wp_die( __( 'You must be logged in to download files.', 'woocommerce' ) . ' <a href="' . wp_login_url( get_permalink( woocommerce_get_page_id( 'myaccount' ) ) ) . '">' . __( 'Login &rarr;', 'woocommerce' ) . '</a>', __( 'Log in to Download Files', 'woocommerce' ) );
+					wp_die( __( 'You must be logged in to download files.', 'woocommerce' ) . ' <a href="' . esc_url( wp_login_url( get_permalink( wc_get_page_id( 'myaccount' ) ) ) ) . '" class="wc-forward">' . __( 'Login', 'woocommerce' ) . '</a>', __( 'Log in to Download Files', 'woocommerce' ) );
 
 				elseif ( !current_user_can( 'download_file', $download_result ) )
 					wp_die( __( 'This is not your download link.', 'woocommerce' ) );
@@ -78,20 +78,20 @@ class WC_Download_Handler {
 			}
 
 			if ( ! get_post( $product_id ) )
-				wp_die( __( 'Product no longer exists.', 'woocommerce' ) . ' <a href="' . home_url() . '">' . __( 'Go to homepage &rarr;', 'woocommerce' ) . '</a>' );
+				wp_die( __( 'Product no longer exists.', 'woocommerce' ) . ' <a href="' . esc_url( home_url() ) . '" class="wc-forward">' . __( 'Go to homepage', 'woocommerce' ) . '</a>' );
 
 			if ( $order_id ) {
 				$order = new WC_Order( $order_id );
 
 				if ( ! $order->is_download_permitted() || $order->post_status != 'publish' )
-					wp_die( __( 'Invalid order.', 'woocommerce' ) . ' <a href="' . home_url() . '">' . __( 'Go to homepage &rarr;', 'woocommerce' ) . '</a>' );
+					wp_die( __( 'Invalid order.', 'woocommerce' ) . ' <a href="' . esc_url( home_url() ) . '" class="wc-forward">' . __( 'Go to homepage', 'woocommerce' ) . '</a>' );
 			}
 
 			if ( $downloads_remaining == '0' )
-				wp_die( __( 'Sorry, you have reached your download limit for this file', 'woocommerce' ) . ' <a href="'.home_url().'">' . __( 'Go to homepage &rarr;', 'woocommerce' ) . '</a>' );
+				wp_die( __( 'Sorry, you have reached your download limit for this file', 'woocommerce' ) . ' <a href="' . esc_url( home_url() ) . '" class="wc-forward">' . __( 'Go to homepage', 'woocommerce' ) . '</a>' );
 
 			if ( $access_expires > 0 && strtotime( $access_expires) < current_time( 'timestamp' ) )
-				wp_die( __( 'Sorry, this download has expired', 'woocommerce' ) . ' <a href="' . home_url() . '">' . __( 'Go to homepage &rarr;', 'woocommerce' ) . '</a>' );
+				wp_die( __( 'Sorry, this download has expired', 'woocommerce' ) . ' <a href="' . esc_url( home_url() ) . '" class="wc-forward">' . __( 'Go to homepage', 'woocommerce' ) . '</a>' );
 
 			if ( $downloads_remaining > 0 ) {
 				$wpdb->update( $wpdb->prefix . "woocommerce_downloadable_product_permissions", array(
@@ -134,7 +134,7 @@ class WC_Download_Handler {
 		$file_download_method = apply_filters( 'woocommerce_file_download_method', get_option( 'woocommerce_file_download_method' ), $product_id );
 
 		if ( ! $file_path )
-			wp_die( __( 'No file defined', 'woocommerce' ) . ' <a href="'.home_url().'">' . __( 'Go to homepage &rarr;', 'woocommerce' ) . '</a>' );
+			wp_die( __( 'No file defined', 'woocommerce' ) . ' <a href="' . esc_url( home_url() ) . '" class="wc-forward">' . __( 'Go to homepage', 'woocommerce' ) . '</a>' );
 
 		// Redirect to the file...
 		if ( $file_download_method == "redirect" ) {
@@ -211,7 +211,20 @@ class WC_Download_Handler {
 		@session_write_close();
 		@ini_set( 'zlib.output_compression', 'Off' );
 
-		@ob_clean(); // Clear the output buffer
+		/**
+		 * Prevents errors, for example: transfer closed with 3 bytes remaining to read
+		 */
+		@ob_end_clean(); // Clear the output buffer
+
+		if ( ob_get_level() ) {
+
+			$levels = ob_get_level();
+
+			for ( $i = 0; $i < $levels; $i++ ) {
+				@ob_end_clean(); // Zip corruption fix
+			}
+
+		}
 
 		if ( $is_IE && is_ssl() ) {
 			// IE bug prevents download via SSL when Cache Control and Pragma no-cache headers set.
@@ -226,7 +239,7 @@ class WC_Download_Handler {
 		if ( strstr( $file_name, '?' ) )
 			$file_name = current( explode( '?', $file_name ) );
 
-		header( "Robots: none" );
+		header( "X-Robots-Tag: noindex, nofollow", true );
 		header( "Content-Type: " . $ctype );
 		header( "Content-Description: File Transfer" );
 		header( "Content-Disposition: attachment; filename=\"" . $file_name . "\";" );
@@ -239,7 +252,7 @@ class WC_Download_Handler {
 
 			// Path fix - kudos to Jason Judge
          	if ( getcwd() )
-         		$file_path = trim( preg_replace( '`^' . getcwd() . '`' , '', $file_path ), '/' );
+         		$file_path = trim( preg_replace( '`^' . str_replace( '\\', '/', getcwd() ) . '`' , '', $file_path ), '/' );
 
             header( "Content-Disposition: attachment; filename=\"" . $file_name . "\";" );
 
@@ -264,18 +277,18 @@ class WC_Download_Handler {
         if ( $remote_file )
         	$this->readfile_chunked( $file_path ) or header( 'Location: ' . $file_path );
         else
-        	$this->readfile_chunked( $file_path ) or wp_die( __( 'File not found', 'woocommerce' ) . ' <a href="' . home_url() . '">' . __( 'Go to homepage &rarr;', 'woocommerce' ) . '</a>' );
+        	$this->readfile_chunked( $file_path ) or wp_die( __( 'File not found', 'woocommerce' ) . ' <a href="' . esc_url( home_url() ) . '" class="wc-forward">' . __( 'Go to homepage', 'woocommerce' ) . '</a>' );
 
         exit;
 	}
 
 	/**
 	 * readfile_chunked
-	 *
 	 * Reads file in chunks so big downloads are possible without changing PHP.INI - http://codeigniter.com/wiki/Download_helper_for_large_files/
-	 *
-	 * @param    string    file
-	 * @param    boolean    return bytes of file
+	 * @param    string $file
+	 * @param    bool   $retbytes return bytes of file
+	 * @return bool|int
+	 * @todo Meaning of the return value? Last return is status of fclose?
 	 */
 	public static function readfile_chunked( $file, $retbytes = true ) {
 

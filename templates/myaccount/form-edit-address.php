@@ -16,11 +16,11 @@ $page_title = ( $load_address == 'billing' ) ? __( 'Billing Address', 'woocommer
 get_currentuserinfo();
 ?>
 
-<?php wc_print_messages(); ?>
+<?php wc_print_notices(); ?>
 
 <?php if ( ! $load_address ) : ?>
 
-	<?php woocommerce_get_template( 'myaccount/my-address.php' ); ?>
+	<?php wc_get_template( 'myaccount/my-address.php' ); ?>
 
 <?php else : ?>
 
@@ -30,13 +30,13 @@ get_currentuserinfo();
 
 		<?php foreach ( $address as $key => $field ) : ?>
 
-			<?php woocommerce_form_field( $key, $field, ! empty( $_POST[ $key ] ) ? woocommerce_clean( $_POST[ $key ] ) : $field['value'] ); ?>
+			<?php woocommerce_form_field( $key, $field, ! empty( $_POST[ $key ] ) ? wc_clean( $_POST[ $key ] ) : $field['value'] ); ?>
 
 		<?php endforeach; ?>
 
 		<p>
 			<input type="submit" class="button" name="save_address" value="<?php _e( 'Save Address', 'woocommerce' ); ?>" />
-			<?php wp_nonce_field( 'woocommerce-edit_address') ?>
+			<?php wp_nonce_field( 'woocommerce-edit_address' ); ?>
 			<input type="hidden" name="action" value="edit_address" />
 		</p>
 

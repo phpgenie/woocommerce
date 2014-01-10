@@ -31,7 +31,6 @@ class WC_Shortcode_Order_Tracking {
 	 * @return void
 	 */
 	public static function output( $atts ) {
-		global $woocommerce;
 
 		extract(shortcode_atts(array(
 		), $atts));
@@ -61,7 +60,7 @@ class WC_Shortcode_Order_Tracking {
 
 					if ( strtolower( $order->billing_email ) == strtolower( $order_email ) ) {
 						do_action( 'woocommerce_track_order', $order->id );
-						woocommerce_get_template( 'order/tracking.php', array(
+						wc_get_template( 'order/tracking.php', array(
 							'order' => $order
 						) );
 
@@ -78,6 +77,6 @@ class WC_Shortcode_Order_Tracking {
 
 		}
 
-		woocommerce_get_template( 'order/form-tracking.php' );
+		wc_get_template( 'order/form-tracking.php' );
 	}
 }

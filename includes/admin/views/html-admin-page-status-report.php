@@ -1,8 +1,6 @@
 <div class="woocommerce-message">
-	<div class="squeezer">
-		<h4><?php _e( 'Please include this information when requesting support:', 'woocommerce' ); ?> </h4>
-		<p class="submit"><a href="#" class="button-primary debug-report"><?php _e( 'Get System Report', 'woocommerce' ); ?></a></p>
-	</div>
+	<p><?php _e( 'Please include this information when requesting support:', 'woocommerce' ); ?> </p>
+	<p class="submit"><a href="#" class="button-primary debug-report"><?php _e( 'Get System Report', 'woocommerce' ); ?></a></p>
 	<div id="debug-report"><textarea readonly="readonly"></textarea></div>
 </div>
 <br/>
@@ -25,7 +23,7 @@
 		</tr>
 		<tr>
 			<td><?php _e( 'WC Version','woocommerce' ); ?>:</td>
-			<td><?php echo esc_html( $woocommerce->version ); ?></td>
+			<td><?php echo esc_html( WC()->version ); ?></td>
 		</tr>
 		<tr>
 			<td><?php _e( 'WC Database Version','woocommerce' ); ?>:</td>
@@ -52,18 +50,9 @@
 			<td><?php if ( function_exists( 'mysql_get_server_info' ) ) echo esc_html( mysql_get_server_info() ); ?></td>
 		</tr>
 		<tr>
-			<td><?php _e( 'PHP Locale','woocommerce' ); ?>:</td>
-			<td><?php
-				$locale = localeconv();
-				foreach ( $locale as $key => $val )
-					if ( is_string( $val ) )
-						echo $key . ': ' . $val . '</br>';
-			?></td>
-		</tr>
-		<tr>
 			<td><?php _e( 'WP Memory Limit','woocommerce' ); ?>:</td>
 			<td><?php
-				$memory = woocommerce_let_to_num( WP_MEMORY_LIMIT );
+				$memory = wc_let_to_num( WP_MEMORY_LIMIT );
 
 				if ( $memory < 67108864 ) {
 					echo '<mark class="error">' . sprintf( __( '%s - We recommend setting memory to at least 64MB. See: <a href="%s">Increasing memory allocated to PHP</a>', 'woocommerce' ), size_format( $memory ), 'http://codex.wordpress.org/Editing_wp-config.php#Increasing_memory_allocated_to_PHP' ) . '</mark>';
@@ -87,7 +76,7 @@
 		<?php if ( function_exists( 'ini_get' ) ) : ?>
 			<tr>
 				<td><?php _e('PHP Post Max Size','woocommerce' ); ?>:</td>
-				<td><?php echo size_format( woocommerce_let_to_num( ini_get('post_max_size') ) ); ?></td>
+				<td><?php echo size_format( wc_let_to_num( ini_get('post_max_size') ) ); ?></td>
 			</tr>
 			<tr>
 				<td><?php _e('PHP Time Limit','woocommerce' ); ?>:</td>
@@ -105,7 +94,7 @@
 		<tr>
 			<td><?php _e( 'WC Logging','woocommerce' ); ?>:</td>
 			<td><?php
-				if ( @fopen( $woocommerce->plugin_path() . '/logs/paypal.txt', 'a' ) )
+				if ( @fopen( WC()->plugin_path() . '/logs/paypal.txt', 'a' ) )
 					echo '<mark class="yes">' . __( 'Log directory is writable.', 'woocommerce' ) . '</mark>';
 				else
 					echo '<mark class="error">' . __( 'Log directory (<code>woocommerce/logs/</code>) is not writable. Logging will not be possible.', 'woocommerce' ) . '</mark>';
@@ -157,7 +146,7 @@
 			$params = array(
 				'sslverify' 	=> false,
 				'timeout' 		=> 60,
-				'user-agent'	=> 'WooCommerce/' . $woocommerce->version,
+				'user-agent'	=> 'WooCommerce/' . WC()->version,
 				'body'			=> $request
 			);
 			$response = wp_remote_post( 'https://www.paypal.com/cgi-bin/webscr', $params );
@@ -192,6 +181,22 @@
 
 	<thead>
 		<tr>
+			<th colspan="2"><?php _e( 'Locale', 'woocommerce' ); ?></th>
+		</tr>
+	</thead>
+
+	<tbody>
+		<?php
+			$locale = localeconv();
+
+			foreach ( $locale as $key => $val )
+				if ( in_array( $key, array( 'decimal_point', 'mon_decimal_point', 'thousands_sep', 'mon_thousands_sep' ) ) )
+					echo '<tr><td>' . $key . ':</td><td>' . $val . '</td></tr>';
+		?>
+	</tbody>
+
+	<thead>
+		<tr>
 			<th colspan="2"><?php _e( 'Plugins', 'woocommerce' ); ?></th>
 		</tr>
 	</thead>
@@ -218,7 +223,7 @@
 						// link the plugin name to the plugin url if available
 						$plugin_name = $plugin_data['Name'];
 						if ( ! empty( $plugin_data['PluginURI'] ) ) {
-							$plugin_name = '<a href="' . $plugin_data['PluginURI'] . '" title="' . __( 'Visit plugin homepage' , 'woocommerce' ) . '">' . $plugin_name . '</a>';
+							$plugin_name = '<a href="' . esc_url( $plugin_data['PluginURI'] ) . '" title="' . __( 'Visit plugin homepage' , 'woocommerce' ) . '">' . $plugin_name . '</a>';
 						}
 
 						if ( strstr( $dirname, 'woocommerce' ) ) {
@@ -446,7 +451,7 @@
 			<td><?php _e( 'Template Overrides', 'woocommerce' ); ?>:</td>
 			<td><?php
 
-				$template_paths = apply_filters( 'woocommerce_template_overrides_scan_paths', array( 'WooCommerce' => $woocommerce->plugin_path() . '/templates/' ) );
+				$template_paths = apply_filters( 'woocommerce_template_overrides_scan_paths', array( 'WooCommerce' => WC()->plugin_path() . '/templates/' ) );
 				$found_files    = array();
 
 				foreach ( $template_paths as $plugin_name => $template_path )
